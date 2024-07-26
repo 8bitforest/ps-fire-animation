@@ -1,0 +1,20 @@
+/*noinspection CssUnresolvedCustomProperty*/
+:root {
+    --icon-fill: #000000;
+    --color-surface-1: var(--uxp-host-background-color);
+    --color-border: var(--color-surface-4);
+}
+
+svg {
+    fill: var(--icon-fill);
+}
+
+/*noinspection CssInvalidMediaFeature*/
+@media (prefers-color-scheme: darkest) {
+    :root {
+        --icon-fill: #aaaaaa;
+        --color-surface-2: #2f2f2f;
+        --color-surface-3: #2b2b2b;
+        --color-surface-4: #262626;
+    }
+}
