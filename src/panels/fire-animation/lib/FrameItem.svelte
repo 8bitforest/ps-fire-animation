@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Frame, Row } from './Timeline'
+    import { Frame, Row } from './timeline/Timeline'
     import { lightenDarkenColor } from '../../../lib/utils'
 
     export let row: Row

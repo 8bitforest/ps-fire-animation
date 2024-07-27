@@ -1,7 +1,8 @@
 <script lang="ts">
-    import Timeline from './lib/Timeline.svelte'
-    import type { Row } from './lib/Timeline'
+    import Timeline from './lib/timeline/Timeline.svelte'
+    import type { Row, TimelineConfig } from './lib/timeline/Timeline'
     import Toolbar from './lib/Toolbar.svelte'
+    import { writable } from 'svelte/store'
 
     const purple = '#5d4682'
     const red = '#bf2608'
@@ -48,7 +49,7 @@
                     {
                         name: 'Fill',
                         color: green,
-                        frames: Array.from({ length: 16 }, () => ({
+                        frames: Array.from({ length: 50 }, () => ({
                             id: frameId,
                             layerId: frameId++
                         })),
@@ -59,23 +60,23 @@
         ]
     }))
 
-    const layerWidth = 300
-    const frameWidth = 100
-    const extraFramesPadding = 3
-    const maxFrameCount = getMaxFrameCount(rows) + extraFramesPadding
-    const frameRowWidth = maxFrameCount * frameWidth
-    let scrollPercentage = 0
+    let scrollWidth = 0
 
-    function getMaxFrameCount(rows: Row[]): number {
-        return rows.reduce((max, row) => {
-            const count = row.children
-                ? getMaxFrameCount(row.children)
-                : row.frames.length
-            return Math.max(max, count)
-        }, 0)
+    let config: TimelineConfig = {
+        rows,
+        frameWidth: 100,
+        layerColWidth: 300,
+        addFrameColWidth: 50,
+        collapsedRowHeight: 20,
+        expandedRowHeight: 60,
+        headIndex: 10,
+        padFrameCount: 3
     }
 
+    let scrollPercentage = writable(0)
+
     let ticking = false
+
     function onScroll(event: Event) {
         if (ticking) return
         ticking = true
@@ -84,7 +85,7 @@
             const target = event.target as HTMLElement
             const width = target.scrollWidth - target.clientWidth
             let percent = target.scrollLeft / (width - 10)
-            scrollPercentage = Math.min(1, Math.max(0, percent))
+            $scrollPercentage = Math.min(1, Math.max(0, percent))
             ticking = false
         })
     }
@@ -96,17 +97,13 @@
     </div>
     <div class="timeline">
         <Timeline
-            {layerWidth}
-            {rows}
-            {frameWidth}
-            {frameRowWidth}
-            {scrollPercentage} />
+            {config}
+            {scrollPercentage}
+            setScrollWidth={value => (scrollWidth = value)} />
     </div>
     <div class="footer">
         <div class="scroll-bar" on:scroll={onScroll}>
-            <div
-                class="scroll-bar-inner"
-                style="min-width: {frameRowWidth + layerWidth}">
+            <div class="scroll-bar-inner" style="min-width: {scrollWidth}">
             </div>
         </div>
     </div>

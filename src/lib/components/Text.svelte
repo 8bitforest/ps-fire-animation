@@ -1,18 +1,13 @@
 <script lang="ts">
+    export let size = '0.75rem'
 </script>
 
-<span class="text">
+<span class="text" style="font-size: {size}">
     <slot />
 </span>
 
 <style>
     .text {
-        font-size: 0.75rem;
-        /*font-weight: 200;*/
-        /*font-family: 'Segoe UI';*/
-        /*font-family: 'Tahoma';*/
-        color: white;
-        /*font-family: Helvetica, Arial, 'Courier New';*/
-        /*text-rendering: optimizeLegibility;*/
+        color: var(--uxp-host-text-color);
     }
 </style>

@@ -1,17 +1,21 @@
 <script lang="ts">
-    import Text from '../../../lib/components/Text.svelte'
-    import IconVisibility from '../../../lib/components/icons/IconVisibility.svelte'
-    import type { Row } from './Timeline'
-    import RowExpander from './RowExpander.svelte'
+    import Text from '../../../../lib/components/Text.svelte'
+    import IconVisibility from '../../../../lib/components/icons/IconVisibility.svelte'
+    import { getTimelineContext, Row } from './Timeline'
+    import RowExpander from '../RowExpander.svelte'
 
     export let rowUpdated = () => {}
     export let row: Row
     export let depth = 0
 
     const indentWidth = 30
+
+    let { collapsedRowHeight } = getTimelineContext()
 </script>
 
-<div class="row">
+<div
+    class="row"
+    style="min-height: {$collapsedRowHeight}px; max-height: {$collapsedRowHeight}px;">
     <div class="layer-name" style="margin-left: {depth * indentWidth}px">
         {#if row.children}
             <RowExpander bind:expanded={row.expanded} onChanged={rowUpdated} />
@@ -31,8 +35,6 @@
 
 <style>
     .row {
-        min-height: var(--timeline-row-height);
-        height: var(--timeline-row-height);
         border-top: 1px solid #262626;
 
         display: flex;

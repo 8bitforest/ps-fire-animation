@@ -11,3 +11,5 @@ export function lightenDarkenColor(col: string, amt: number) {
     const g = Math.min(255, Math.max(0, (num & 0x0000ff) + amt))
     return (usePound ? '#' : '') + (g | (b << 8) | (r << 16)).toString(16)
 }
+
+export const scrollbarSize = 16
