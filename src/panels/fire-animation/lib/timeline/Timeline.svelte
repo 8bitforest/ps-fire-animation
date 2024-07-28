@@ -159,7 +159,7 @@
 
     .timeline-frames-header {
         position: relative;
-        align-self: flex-end;
+        z-index: 5;
     }
 
     .timeline-body-container {

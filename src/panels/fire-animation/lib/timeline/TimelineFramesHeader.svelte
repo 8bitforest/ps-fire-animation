@@ -15,13 +15,14 @@
             <div class="frame-header-text">
                 <Text size=".5rem">{i}</Text>
             </div>
-            <div class="frame-header-line">|</div>
+            <div class="frame-header-line"></div>
         </div>
     {/each}
 </div>
 
 <style>
     .timeline-frames-header {
+        height: 100%;
         display: flex;
         flex-direction: row;
         align-items: stretch;
@@ -35,5 +36,12 @@
 
     .active {
         background-color: var(--color-surface-4);
+    }
+
+    .frame-header-line {
+        height: 100%;
+        margin-top: 10px;
+        width: 2px;
+        background-color: var(--color-border);
     }
 </style>
