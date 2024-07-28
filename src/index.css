@@ -20,5 +20,7 @@ svg {
         --color-surface-3: #2b2b2b;
         --color-surface-4: #262626;
         --color-scrollbar: #292929;
+        --color-button-hover: #262626;
+        --color-button-active: #1f1f1f;
     }
 }

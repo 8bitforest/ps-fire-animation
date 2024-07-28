@@ -15,6 +15,7 @@
     import TimelineAddFrameRow from './TimelineAddFrameRow.svelte'
     import { Readable, writable } from 'svelte/store'
     import { scrollbarSize } from '../../../../lib/utils'
+    import TimelineControls from './TimelineControls.svelte'
 
     export let config: TimelineConfig
     export let setScrollWidth: (width: number) => void
@@ -92,7 +93,7 @@
         <div
             class="timeline-layers-header"
             style="min-width: {$layerColWidth};">
-            <Text>Layers</Text>
+            <TimelineControls rowUpdated={rowUpdateHandler} />
         </div>
         <div class="timeline-frames-header" style="left: -{$scrollOffset}px">
             <TimelineFramesHeader />
@@ -152,7 +153,6 @@
 
     .timeline-layers-header {
         position: relative;
-        text-align: center;
         background-color: var(--color-surface-3);
         z-index: 10;
     }
