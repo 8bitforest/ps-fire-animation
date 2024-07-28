@@ -97,7 +97,7 @@
         <div class="timeline-frames-header" style="left: -{$scrollOffset}px">
             <TimelineFramesHeader />
         </div>
-        <TimelinePlayhead timelineWidth={timelineVisibleWidth} />
+        <TimelinePlayhead timelineWidth={timelineVisibleWidth} {headIndex} />
     </div>
     <div class="timeline-body-container">
         <div class="timeline-body-scroll">

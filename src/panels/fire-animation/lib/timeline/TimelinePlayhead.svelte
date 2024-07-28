@@ -1,16 +1,13 @@
 <script lang="ts">
     import IconPlayhead from '../../../../lib/components/icons/IconPlayhead.svelte'
     import { getTimelineContext } from './Timeline'
+    import { Writable } from 'svelte/store'
 
     export let timelineWidth: number
+    export let headIndex: Writable<number>
 
-    let {
-        frameWidth,
-        headIndex,
-        scrollOffset,
-        layerColWidth,
-        addFrameColWidth
-    } = getTimelineContext()
+    let { frameWidth, scrollOffset, layerColWidth, addFrameColWidth } =
+        getTimelineContext()
 
     let offset = 0
     $: {
@@ -21,10 +18,45 @@
             -$scrollOffset + $layerColWidth + $headIndex * $frameWidth
         offset = Math.min(maxX, Math.max(minX, unboundedOffset))
     }
+
+    function handleDragStart(event: MouseEvent) {
+        event.preventDefault()
+
+        const startX = event.clientX
+        const startIndex = $headIndex
+        const width = $frameWidth
+        let prevIndex = startIndex
+
+        function handleDrag(event: MouseEvent) {
+            event.preventDefault()
+            const dx = event.clientX - startX
+            const dIndex = Math.round(dx / width)
+            const newIndex = Math.max(0, startIndex + dIndex)
+
+            if (newIndex !== prevIndex) {
+                prevIndex = newIndex
+                headIndex.set(newIndex)
+            }
+        }
+
+        function handleDragEnd() {
+            window.removeEventListener('mousemove', handleDrag)
+            window.removeEventListener('mouseup', handleDragEnd)
+            window.removeEventListener('dragend', handleDragEnd)
+        }
+
+        window.addEventListener('mousemove', handleDrag)
+        window.addEventListener('mouseup', handleDragEnd)
+        window.addEventListener('dragend', handleDragEnd)
+    }
 </script>
 
-<div class="playhead" style="left: {offset}px;">
-    <div class="playhead-icon-container">
+<div class="playhead" style="left: {offset}px;" draggable="false">
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div
+        class="playhead-icon-container"
+        on:dragstart={handleDragStart}
+        draggable="true">
         <IconPlayhead class="playhead-icon" />
     </div>
 </div>
@@ -37,10 +69,10 @@
 
     .playhead-icon-container {
         position: absolute;
-        width: 50px;
-        height: 50px;
-        top: -1px;
-        left: -25px;
+        width: 30px;
+        height: 30px;
+        top: 7px;
+        left: -15px;
         display: flex;
         justify-content: center;
         align-items: center;
