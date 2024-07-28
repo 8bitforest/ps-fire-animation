@@ -25,6 +25,7 @@ export type Row = FolderRow | FrameRow
 export interface Frame {
     id: number
     layerId: number
+    image: string
 }
 
 export interface TimelineConfig {
@@ -64,4 +65,21 @@ export function getMaxFrameCount(rows: Row[]): number {
             : row.frames.length
         return Math.max(max, count)
     }, 0)
+}
+
+export function getRowHeight(
+    row: Row,
+    collapsed: number,
+    expanded: number
+): number {
+    return !row.children && row.expanded ? expanded : collapsed
+}
+
+export function getRowHeightStyle(
+    row: Row,
+    collapsed: number,
+    expanded: number
+): string {
+    const height = getRowHeight(row, collapsed, expanded)
+    return `min-height: ${height}px; max-height: ${height}px; height: ${height}px;`
 }

@@ -55,6 +55,7 @@ const manifest: UXP_Manifest = {
         },
         network: {
             domains: [
+                'https://picsum.photos',
                 `ws://localhost:${extraPrefs.hotReloadPort}` // Required for hot reload
             ]
         },

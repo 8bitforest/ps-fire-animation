@@ -1,7 +1,7 @@
 <script lang="ts">
     import Text from '../../../../lib/components/Text.svelte'
     import IconVisibility from '../../../../lib/components/icons/IconVisibility.svelte'
-    import { getTimelineContext, Row } from './Timeline'
+    import { getRowHeightStyle, getTimelineContext, Row } from './Timeline'
     import RowExpander from '../RowExpander.svelte'
 
     export let rowUpdated = () => {}
@@ -10,21 +10,37 @@
 
     const indentWidth = 30
 
-    let { collapsedRowHeight } = getTimelineContext()
+    let { collapsedRowHeight, expandedRowHeight } = getTimelineContext()
 </script>
 
 <div
     class="row"
-    style="min-height: {$collapsedRowHeight}px; max-height: {$collapsedRowHeight}px;">
-    <div class="layer-name" style="margin-left: {depth * indentWidth}px">
-        {#if row.children}
-            <RowExpander bind:expanded={row.expanded} onChanged={rowUpdated} />
-        {:else}
-            <div style="width: 22px" />
-        {/if}
-        <Text>{row.name}</Text>
+    style={getRowHeightStyle(row, $collapsedRowHeight, $expandedRowHeight)}>
+    <div class="row-contents" style="height: {$collapsedRowHeight}">
+        <div class="layer-name" style="margin-left: {depth * indentWidth}px">
+            {#if row.children}
+                <RowExpander
+                    bind:expanded={row.expanded}
+                    onChanged={rowUpdated}
+                    folder={true} />
+            {:else}
+                <div style="width: 22px" />
+            {/if}
+            <Text>{row.name}</Text>
+        </div>
+        <div class="right-icons">
+            {#if !row.children}
+                <RowExpander
+                    bind:expanded={row.expanded}
+                    onChanged={rowUpdated} />
+            {/if}
+            <IconVisibility class="icon-visibility" />
+        </div>
     </div>
-    <IconVisibility class="icon-visibility" />
+
+    {#if !row.children && row.expanded}
+        <div class="layer-info"></div>
+    {/if}
 </div>
 
 {#if row.children && row.expanded}
@@ -35,25 +51,46 @@
 
 <style>
     .row {
-        border-top: 1px solid #262626;
+        border-bottom: 1px solid var(--color-border);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
+    .row-contents {
         display: flex;
         flex-direction: row;
         align-items: stretch;
-
+        justify-content: space-between;
         padding-left: 5px;
+        width: 100%;
+        height: 20px;
+    }
+
+    .layer-info {
+        /*position: relative;*/
+        /*top: -1px;*/
+        flex: 1 1 auto;
+        width: 100%;
+        border-top: 1px solid var(--color-border);
+        background-color: var(--color-surface-2);
+    }
+
+    .layer-name {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .right-icons {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
     }
 
     :global(.icon-visibility) {
         margin-left: auto;
         margin-right: 5px;
         height: 70%;
-        align-self: center;
-    }
-
-    .layer-name {
-        display: flex;
-        flex-direction: row;
-        align-items: stretch;
     }
 </style>

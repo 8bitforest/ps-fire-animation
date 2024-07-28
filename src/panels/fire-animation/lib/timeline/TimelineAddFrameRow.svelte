@@ -1,15 +1,15 @@
 <script lang="ts">
-    import { getTimelineContext, Row } from './Timeline'
+    import { getRowHeightStyle, getTimelineContext, Row } from './Timeline'
     import Text from '../../../../lib/components/Text.svelte'
 
     export let row: Row
 
-    let { collapsedRowHeight } = getTimelineContext()
+    let { collapsedRowHeight, expandedRowHeight } = getTimelineContext()
 </script>
 
 <div
     class="row"
-    style="min-height: {$collapsedRowHeight}px; max-height: {$collapsedRowHeight}px;">
+    style={getRowHeightStyle(row, $collapsedRowHeight, $expandedRowHeight)}>
     {#if !row.children}
         <Text size="1.15rem">+</Text>
     {/if}
@@ -23,7 +23,7 @@
 
 <style>
     .row {
-        border-top: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--color-border);
 
         display: flex;
         flex-direction: row;

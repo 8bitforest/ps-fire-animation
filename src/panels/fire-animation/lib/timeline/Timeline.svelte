@@ -143,6 +143,7 @@
     .timeline-header {
         flex-shrink: 0;
         background-color: var(--color-surface-1);
+        border-bottom: 1px solid var(--color-border);
 
         display: flex;
         flex-direction: row;
@@ -159,7 +160,6 @@
     .timeline-frames-header {
         position: relative;
         align-self: flex-end;
-        background-color: green;
     }
 
     .timeline-body-container {

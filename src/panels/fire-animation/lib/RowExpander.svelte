@@ -6,6 +6,7 @@
 
     export let expanded = false
     export let onChanged = () => {}
+    export let folder = false
 
     function click() {
         expanded = !expanded
@@ -18,15 +19,20 @@
 <div class="expander" on:click={click}>
     {#if expanded}
         <IconChevronDown class="icon-chev" />
-        <IconFolderOpen class="icon-folder" />
+        {#if folder}
+            <IconFolderOpen class="icon-folder" />
+        {/if}
     {:else}
         <IconChevronRight class="icon-chev" />
-        <IconFolder class="icon-folder" />
+        {#if folder}
+            <IconFolder class="icon-folder" />
+        {/if}
     {/if}
 </div>
 
 <style>
     .expander {
+        height: 100%;
         display: flex;
         flex-direction: row;
         align-items: stretch;
