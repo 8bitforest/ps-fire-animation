@@ -117,11 +117,15 @@
                     {/each}
                 </div>
                 <div
-                    class="add-frame-col"
+                    class="add-frame-col-container"
                     style="min-width: {$addFrameColWidth};">
-                    {#each $rows as row}
-                        <TimelineAddFrameRow {row} />
-                    {/each}
+                    <div
+                        class="add-frame-col"
+                        style="min-width: {$addFrameColWidth + scrollbarSize}">
+                        {#each $rows as row}
+                            <TimelineAddFrameRow {row} />
+                        {/each}
+                    </div>
                 </div>
             </div>
         </div>
@@ -192,11 +196,14 @@
         z-index: -1;
     }
 
-    .add-frame-col {
-        border-left: 1px solid var(--color-border);
+    .add-frame-col-container {
         background-color: var(--color-surface-3);
-
+        border-left: 1px solid var(--color-border);
         position: relative;
         z-index: 10;
+    }
+
+    .add-frame-col {
+        background-color: var(--color-surface-3);
     }
 </style>

@@ -4,12 +4,12 @@
     import IconArrowLeft from '../../../../lib/components/icons/IconArrowLeft.svelte'
     import IconArrowRight from '../../../../lib/components/icons/IconArrowRight.svelte'
     import IconDuplicate from '../../../../lib/components/icons/IconDuplicate.svelte'
-    import IconNewItem from '../../../../lib/components/icons/IconNewItem.svelte'
     import IconPlay from '../../../../lib/components/icons/IconPlay.svelte'
     import IconDelete from '../../../../lib/components/icons/IconDelete.svelte'
     import IconCollapseAll from '../../../../lib/components/icons/IconCollapseAll.svelte'
     import { getTimelineContext, Row } from './Timeline'
     import IconStop from '../../../../lib/components/icons/IconStop.svelte'
+    import IconAdd from '../../../../lib/components/icons/IconAdd.svelte'
 
     export let rowUpdated = () => {}
 
@@ -86,7 +86,7 @@
         <IconArrowRight />
     </IconButton>
     <IconButton tooltip="New frame" click={onNewFrame} disabled={playing}>
-        <IconNewItem />
+        <IconAdd />
     </IconButton>
     <IconButton
         tooltip="Duplicate frame"

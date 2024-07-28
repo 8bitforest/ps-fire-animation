@@ -57,6 +57,10 @@
         align-items: flex-start;
     }
 
+    .row:hover {
+        background-color: var(--color-surface-3);
+    }
+
     .row-contents {
         display: flex;
         flex-direction: row;

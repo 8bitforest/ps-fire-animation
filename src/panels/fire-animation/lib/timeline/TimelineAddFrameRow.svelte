@@ -4,15 +4,18 @@
 
     export let row: Row
 
-    let { collapsedRowHeight, expandedRowHeight } = getTimelineContext()
+    let { collapsedRowHeight, expandedRowHeight, addFrameColWidth } =
+        getTimelineContext()
 </script>
 
 <div
     class="row"
     style={getRowHeightStyle(row, $collapsedRowHeight, $expandedRowHeight)}>
-    {#if !row.children}
-        <Text size="1.15rem">+</Text>
-    {/if}
+    <div class="buttons" style="min-width: {$addFrameColWidth}px">
+        {#if !row.children}
+            <Text size="1.15rem">+</Text>
+        {/if}
+    </div>
 </div>
 
 {#if row.children && row.expanded}
@@ -25,6 +28,13 @@
     .row {
         border-bottom: 1px solid var(--color-border);
 
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .buttons {
         display: flex;
         flex-direction: row;
         align-items: center;
