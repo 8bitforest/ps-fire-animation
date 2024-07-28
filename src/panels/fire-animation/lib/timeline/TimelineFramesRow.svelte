@@ -1,5 +1,10 @@
 <script lang="ts">
-    import { getRowHeightStyle, getTimelineContext, Row } from './Timeline'
+    import {
+        getMaxFrameCount,
+        getRowHeightStyle,
+        getTimelineContext,
+        Row
+    } from './Timeline'
     import FrameItem from '../FrameItem.svelte'
 
     export let frameRowWidth: number
@@ -8,6 +13,16 @@
 
     let { collapsedRowHeight, expandedRowHeight, frameWidth } =
         getTimelineContext()
+
+    const folderFrame = {
+        id: 'folder',
+        layerId: 0,
+        image: ''
+    }
+
+    const folderFrames = row.children ? getMaxFrameCount(row.children) : 0
+    const defaultColor = '#3a3a3a'
+    let color = row.color || defaultColor
 </script>
 
 <div
@@ -19,8 +34,13 @@
     )}">
     {#if !row.children}
         {#each row.frames as frame (frame.id)}
-            <FrameItem {row} {frame} width={$frameWidth} />
+            <FrameItem {color} image={frame.image} width={$frameWidth} />
         {/each}
+    {:else}
+        <FrameItem
+            {color}
+            image={folderFrame.image}
+            width={$frameWidth * folderFrames} />
     {/if}
 </div>
 

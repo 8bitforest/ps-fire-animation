@@ -1,13 +1,10 @@
 <script lang="ts">
-    import { Frame, Row } from './timeline/Timeline'
     import { lightenDarkenColor } from '../../../lib/utils'
 
-    export let row: Row
-    export let frame: Frame
+    export let color: string
+    export let image: string
     export let width: number
 
-    const defaultColor = '#262626'
-    let color = row.color || defaultColor
     let borderColor = lightenDarkenColor(color, 60)
 </script>
 
@@ -19,12 +16,8 @@
         width: {width - 4}px;
         min-width: {width - 4}px;
     ">
-    {#if row.expanded}
-        <!--        <p>{frame.image}</p>-->
-        <img
-            class="timeline-frame-image"
-            src="https://picsum.photos/200/300"
-            alt="frame" />
+    {#if image}
+        <img class="timeline-frame-image" src={image} alt="frame" />
     {/if}
 </div>
 
@@ -41,6 +34,6 @@
         height: 100%;
         object-fit: contain;
         border-radius: 6px;
-        padding: 1px;
+        padding: 2px;
     }
 </style>
