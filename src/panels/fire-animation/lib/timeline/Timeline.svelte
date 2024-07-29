@@ -7,7 +7,6 @@
     } from './Timeline'
     import TimelineFramesRow from './TimelineFramesRow.svelte'
     import TimelineLayersRow from './TimelineLayersRow.svelte'
-    import Text from '../../../../lib/components/Text.svelte'
     import TimelineFramesHeader from './TimelineFramesHeader.svelte'
     import TimelinePlayhead from './TimelinePlayhead.svelte'
     import TimelineCurrentFrameHighlight from './TimelineCurrentFrameHighlight.svelte'
@@ -35,6 +34,8 @@
     $: expandedRowHeight.update(() => config.expandedRowHeight)
     let headIndex = writable(config.headIndex)
     $: headIndex.update(() => config.headIndex)
+    let thumbnailResolution = writable(config.thumbnailResolution)
+    $: thumbnailResolution.update(() => config.thumbnailResolution)
 
     let scrollOffset = writable(0)
     let frameColCount = writable(0)
@@ -49,7 +50,8 @@
         scrollPercentage,
         scrollOffset,
         headIndex,
-        frameColCount
+        frameColCount,
+        thumbnailResolution
     }
     setContext(timelineContextKey, context)
 

@@ -1,11 +1,30 @@
 <script lang="ts">
     import { lightenDarkenColor } from '../../../lib/utils'
+    import PSLayerThumbnail from './PSLayerThumbnail.svelte'
+    import { Frame } from './timeline/Timeline'
 
-    export let color: string
-    export let image: string
+    export let frame: Frame
     export let width: number
+    export let height: number
 
+    const defaultColor = '#3a3a3a'
+    let image = frame.image
+    let color = frame.row.color || defaultColor
     let borderColor = lightenDarkenColor(color, 60)
+
+    const border = 1
+    const margin = 2
+    const padding = 4
+
+    let thumbnailHeight = 0
+    let thumbnailWidth = 0
+
+    $: {
+        if (!$image) break $
+        let aspect = $image.fullWidth / $image.fullHeight
+        thumbnailHeight = height - (margin + padding + border) * 2
+        thumbnailWidth = thumbnailHeight * aspect
+    }
 </script>
 
 <div
@@ -16,8 +35,11 @@
         width: {width - 4}px;
         min-width: {width - 4}px;
     ">
-    {#if image}
-        <img class="timeline-frame-image" src={image} alt="frame" />
+    {#if $image}
+        <PSLayerThumbnail
+            data={$image}
+            width={thumbnailWidth}
+            height={thumbnailHeight} />
     {/if}
 </div>
 
@@ -27,13 +49,6 @@
         background-color: var(--frame-color);
         border-radius: 6px;
         position: relative;
-    }
-
-    .timeline-frame-image {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        border-radius: 6px;
-        padding: 2px;
+        padding: 4px;
     }
 </style>

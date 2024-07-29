@@ -1,87 +1,34 @@
 <script lang="ts">
     import Timeline from './lib/timeline/Timeline.svelte'
-    import type { Row, TimelineConfig } from './lib/timeline/Timeline'
+    import {
+        findFrame,
+        layersToRows,
+        TimelineConfig
+    } from './lib/timeline/Timeline'
     import Toolbar from './lib/Toolbar.svelte'
     import { writable } from 'svelte/store'
-    import Text from '../../lib/components/Text.svelte'
     import IconImage from '../../lib/components/icons/IconImage.svelte'
+    import { FireDocument } from '../../api/photoshop/document'
+    import { FireListeners } from '../../api/photoshop/listeners'
 
-    const purple = '#5d4682'
-    const red = '#bf2608'
-    const blue = '#0b5a7d'
-    const green = '#0b7d5a'
-
-    const anims = ['Walk', 'Run', 'Jump', 'Idle', 'Attack', 'Die']
-    let frameId = 1
-    let rows: Row[] = anims.map(name => ({
-        name,
-        expanded: true,
-        children: [
-            {
-                name: 'Normals',
-                color: purple,
-                frames: Array.from({ length: 5 }, () => ({
-                    id: frameId,
-                    layerId: frameId++,
-                    image: 'https://picsum.photos/200/300'
-                })),
-                expanded: true
-            },
-            {
-                name: 'Colors',
-                expanded: true,
-                children: [
-                    {
-                        name: 'Stroke',
-                        color: blue,
-                        frames: Array.from({ length: 3 }, () => ({
-                            id: frameId,
-                            layerId: frameId++,
-                            image: 'https://picsum.photos/200/300'
-                        })),
-                        expanded: true
-                    },
-                    {
-                        name: 'Texture',
-                        color: red,
-                        frames: Array.from({ length: 4 }, () => ({
-                            id: frameId,
-                            layerId: frameId++,
-                            image: 'https://picsum.photos/200/300'
-                        })),
-                        expanded: true
-                    },
-                    {
-                        name: 'Fill',
-                        color: green,
-                        frames: Array.from({ length: 50 }, () => ({
-                            id: frameId,
-                            layerId: frameId++,
-                            image: 'https://picsum.photos/200/300'
-                        })),
-                        expanded: true
-                    }
-                ]
-            }
-        ]
-    }))
-
+    let document = FireDocument.current
     const collapsedRowHeight = 20
-    const canvasAspect = 1
+    const canvasAspect = document.aspectRatio
     const frameWidthMin = collapsedRowHeight * canvasAspect
     const frameWidthMax = 300
     const defaultFrameWidth = 100
     let scrollWidth = 0
 
     let config: TimelineConfig = {
-        rows,
+        rows: layersToRows(document.getLayers()),
         frameWidth: defaultFrameWidth,
         layerColWidth: 300,
         addFrameColWidth: 50,
         collapsedRowHeight: 20,
         expandedRowHeight: defaultFrameWidth / canvasAspect,
         headIndex: 10,
-        padFrameCount: 3
+        padFrameCount: 3,
+        thumbnailResolution: 300
     }
 
     let scrollPercentage = writable(0)
@@ -106,6 +53,23 @@
         config.frameWidth = +target.value
         config.expandedRowHeight = config.frameWidth / canvasAspect
         config = config
+    }
+
+    FireListeners.addHistoryStateListener(async () => {
+        console.log('History state changed, refreshing current frame')
+        await refreshCurrentFrame()
+    })
+
+    async function refreshCurrentFrame() {
+        const frame = findFrame(config.rows, document.currentLayer.id)
+        if (frame?.row?.expanded) {
+            frame.image.set(
+                await frame.layer.getBase64ImageData(
+                    config.thumbnailResolution,
+                    config.thumbnailResolution
+                )
+            )
+        }
     }
 </script>
 
