@@ -5,12 +5,12 @@
     import IconFolderOpen from '../../../lib/components/icons/IconFolderOpen.svelte'
 
     export let expanded = false
-    export let onChanged = () => {}
+    export let onChanged = (expanded: boolean) => {}
     export let folder = false
 
     function click() {
         expanded = !expanded
-        onChanged()
+        onChanged(expanded)
     }
 </script>
 

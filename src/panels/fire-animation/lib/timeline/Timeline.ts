@@ -12,7 +12,7 @@ export interface RowBase {
     name: string
     color: string
     layer: FireLayer
-    expanded: boolean
+    expanded: Writable<boolean>
 }
 
 export interface FolderRow extends RowBase {
@@ -33,21 +33,10 @@ export interface Frame {
     layer: FireLayer
     row: Row
     image: Writable<FireLayerTrimmedImageData | null>
+    selected: Writable<boolean>
 }
 
 export interface TimelineConfig {
-    rows: Row[]
-    frameWidth: number
-    layerColWidth: number
-    addFrameColWidth: number
-    collapsedRowHeight: number
-    expandedRowHeight: number
-    headIndex: number
-    padFrameCount: number
-    thumbnailResolution: number
-}
-
-export interface TimelineContext {
     rows: Readable<Row[]>
     frameWidth: Readable<number>
     layerColWidth: Readable<number>
@@ -55,10 +44,16 @@ export interface TimelineContext {
     collapsedRowHeight: Readable<number>
     expandedRowHeight: Readable<number>
     scrollPercentage: Readable<number>
+    headIndex: Writable<number>
+    padFrameCount: Readable<number>
+    thumbnailResolution: Readable<number>
+    selectFrame: (frame: Frame) => void
+    setScrollWidth: (width: number) => void
+}
+
+export interface TimelineContext extends TimelineConfig {
     scrollOffset: Readable<number>
     frameColCount: Readable<number>
-    headIndex: Readable<number>
-    thumbnailResolution: Readable<number>
 }
 
 export const timelineContextKey = 'timeline'
@@ -78,18 +73,20 @@ export function getMaxFrameCount(rows: Row[]): number {
 
 export function getRowHeight(
     row: Row,
-    collapsed: number,
-    expanded: number
+    expanded: boolean,
+    collapsedHeight: number,
+    expandedHeight: number
 ): number {
-    return !row.children && row.expanded ? expanded : collapsed
+    return !row.children && expanded ? expandedHeight : collapsedHeight
 }
 
 export function getRowHeightStyle(
     row: Row,
-    collapsed: number,
-    expanded: number
+    expanded: boolean,
+    collapsedHeight: number,
+    expandedHeight: number
 ): string {
-    const height = getRowHeight(row, collapsed, expanded)
+    const height = getRowHeight(row, expanded, collapsedHeight, expandedHeight)
     return `min-height: ${height}px; max-height: ${height}px; height: ${height}px;`
 }
 
@@ -109,7 +106,7 @@ export function layersToRows(layers: FireLayer[]): Row[] {
                         ? layerColors.violet.hex
                         : layer.color.hex,
                 layer,
-                expanded: layer.expanded,
+                expanded: writable(layer.expanded),
                 frames: []
             }
 
@@ -119,7 +116,8 @@ export function layersToRows(layers: FireLayer[]): Row[] {
                     name: child.name,
                     layer: child,
                     row,
-                    image: writable(null)
+                    image: writable(null),
+                    selected: writable(child.selected)
                 }
             })
 
@@ -130,7 +128,7 @@ export function layersToRows(layers: FireLayer[]): Row[] {
                 name: layer.name,
                 color: layer.color === layerColors.none ? '' : layer.color.hex,
                 layer,
-                expanded: layer.expanded,
+                expanded: writable(layer.expanded),
                 children: layer.children.map(makeRow)
             }
         } else {
@@ -139,7 +137,7 @@ export function layersToRows(layers: FireLayer[]): Row[] {
                 name: layer.name,
                 color: layer.color.hex,
                 layer,
-                expanded: false,
+                expanded: writable(false),
                 frames: []
             }
 
@@ -149,7 +147,8 @@ export function layersToRows(layers: FireLayer[]): Row[] {
                     name: layer.name,
                     layer,
                     row,
-                    image: writable(null)
+                    image: writable(null),
+                    selected: writable(layer.selected)
                 }
             ]
 
@@ -172,15 +171,44 @@ export function findRow(rows: Row[], layerId: number): Row | undefined {
     }
 }
 
-export function findFrame(rows: Row[], layerId: number): Frame | undefined {
+export function findFrameByLayerId(
+    rows: Row[],
+    layerId: number
+): Frame | undefined {
+    return findFrame(rows, frame => frame.layer.id === layerId)
+}
+
+export function findFrame(
+    rows: Row[],
+    predicate: (frame: Frame) => boolean
+): Frame | undefined {
     for (const row of rows) {
         if (row.children) {
-            const found = findFrame(row.children, layerId)
+            const found = findFrame(row.children, predicate)
             if (found) return found
         } else {
             for (const frame of row.frames) {
-                if (frame.id === layerId) return frame
+                if (predicate(frame)) return frame
             }
         }
     }
+}
+
+export function findFrames(
+    rows: Row[],
+    predicate: (frame: Frame) => boolean
+): Frame[] {
+    const frames: Frame[] = []
+
+    for (const row of rows) {
+        if (row.children) {
+            frames.push(...findFrames(row.children, predicate))
+        } else {
+            for (const frame of row.frames) {
+                if (predicate(frame)) frames.push(frame)
+            }
+        }
+    }
+
+    return frames
 }

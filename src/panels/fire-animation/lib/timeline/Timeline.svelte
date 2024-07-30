@@ -12,52 +12,35 @@
     import TimelineCurrentFrameHighlight from './TimelineCurrentFrameHighlight.svelte'
     import { onMount, setContext } from 'svelte'
     import TimelineAddFrameRow from './TimelineAddFrameRow.svelte'
-    import { Readable, writable } from 'svelte/store'
+    import { writable } from 'svelte/store'
     import { scrollbarSize } from '../../../../lib/utils'
     import TimelineControls from './TimelineControls.svelte'
 
     export let config: TimelineConfig
-    export let setScrollWidth: (width: number) => void
-    export let scrollPercentage: Readable<number>
-
-    let rows = writable(config.rows)
-    $: rows.update(() => config.rows)
-    let frameWidth = writable(config.frameWidth)
-    $: frameWidth.update(() => config.frameWidth)
-    let layerColWidth = writable(config.layerColWidth)
-    $: layerColWidth.update(() => config.layerColWidth)
-    let addFrameColWidth = writable(config.addFrameColWidth)
-    $: addFrameColWidth.update(() => config.addFrameColWidth)
-    let collapsedRowHeight = writable(config.collapsedRowHeight)
-    $: collapsedRowHeight.update(() => config.collapsedRowHeight)
-    let expandedRowHeight = writable(config.expandedRowHeight)
-    $: expandedRowHeight.update(() => config.expandedRowHeight)
-    let headIndex = writable(config.headIndex)
-    $: headIndex.update(() => config.headIndex)
-    let thumbnailResolution = writable(config.thumbnailResolution)
-    $: thumbnailResolution.update(() => config.thumbnailResolution)
 
     let scrollOffset = writable(0)
     let frameColCount = writable(0)
 
     let context: TimelineContext = {
+        ...config,
+        scrollOffset,
+        frameColCount
+    }
+    setContext(timelineContextKey, context)
+
+    let {
         rows,
         frameWidth,
         layerColWidth,
         addFrameColWidth,
-        collapsedRowHeight,
-        expandedRowHeight,
         scrollPercentage,
-        scrollOffset,
-        headIndex,
-        frameColCount,
-        thumbnailResolution
-    }
-    setContext(timelineContextKey, context)
+        padFrameCount,
+        setScrollWidth
+    } = context
 
     let frameRowWidth: number
     $: {
-        $frameColCount = getMaxFrameCount($rows) + config.padFrameCount
+        $frameColCount = getMaxFrameCount($rows) + $padFrameCount
         frameRowWidth = $frameColCount * $frameWidth
         setScrollWidth(frameRowWidth + $layerColWidth + $addFrameColWidth)
     }
@@ -84,10 +67,6 @@
                 $addFrameColWidth +
                 scrollbarSize)
     }
-
-    function rowUpdateHandler() {
-        rows.update(rows => rows)
-    }
 </script>
 
 <div class="timeline" bind:this={timelineElement}>
@@ -95,21 +74,19 @@
         <div
             class="timeline-layers-header"
             style="min-width: {$layerColWidth};">
-            <TimelineControls rowUpdated={rowUpdateHandler} />
+            <TimelineControls />
         </div>
         <div class="timeline-frames-header" style="left: -{$scrollOffset}px">
             <TimelineFramesHeader />
         </div>
-        <TimelinePlayhead timelineWidth={timelineVisibleWidth} {headIndex} />
+        <TimelinePlayhead timelineWidth={timelineVisibleWidth} />
     </div>
     <div class="timeline-body-container">
         <div class="timeline-body-scroll">
             <div class="timeline-body">
                 <div class="layers-col" style="min-width: {$layerColWidth};">
                     {#each $rows as row}
-                        <TimelineLayersRow
-                            {row}
-                            rowUpdated={rowUpdateHandler} />
+                        <TimelineLayersRow {row} />
                     {/each}
                 </div>
                 <div class="frames-col" style="left: -{$scrollOffset}px">
@@ -195,7 +172,7 @@
         flex: 1 1 auto;
         min-width: 0;
         position: relative;
-        z-index: -1;
+        z-index: 5;
     }
 
     .add-frame-col-container {

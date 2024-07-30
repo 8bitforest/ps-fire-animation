@@ -1,13 +1,16 @@
 <script lang="ts">
     import IconPlayhead from '../../../../lib/components/icons/IconPlayhead.svelte'
     import { getTimelineContext } from './Timeline'
-    import { Writable } from 'svelte/store'
 
     export let timelineWidth: number
-    export let headIndex: Writable<number>
 
-    let { frameWidth, scrollOffset, layerColWidth, addFrameColWidth } =
-        getTimelineContext()
+    let {
+        frameWidth,
+        scrollOffset,
+        layerColWidth,
+        addFrameColWidth,
+        headIndex
+    } = getTimelineContext()
 
     let offset = 0
     $: {

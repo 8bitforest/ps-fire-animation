@@ -11,19 +11,16 @@
     import IconStop from '../../../../lib/components/icons/IconStop.svelte'
     import IconAdd from '../../../../lib/components/icons/IconAdd.svelte'
 
-    export let rowUpdated = () => {}
-
     let { rows } = getTimelineContext()
     let playing = false
 
     function onCollapseAll() {
         function collapseAll(row: Row) {
-            row.expanded = false
+            row.expanded.set(false)
             if (row.children) row.children.forEach(collapseAll)
         }
 
         $rows.forEach(collapseAll)
-        rowUpdated()
     }
 
     function onToBeginning() {

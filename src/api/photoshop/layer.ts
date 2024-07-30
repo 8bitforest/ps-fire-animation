@@ -55,6 +55,33 @@ export class FireLayer {
         return this.psLayer.name
     }
 
+    get selected() {
+        return this.psLayer.selected
+    }
+
+    async select() {
+        await ps.core.executeAsModal(
+            async () => {
+                await ps.action.batchPlay(
+                    [
+                        {
+                            _obj: 'select',
+                            _target: [
+                                {
+                                    _ref: 'layer',
+                                    _id: this.psLayer.id
+                                }
+                            ],
+                            layerID: [this.psLayer.id]
+                        }
+                    ],
+                    {}
+                )
+            },
+            { commandName: 'selectLayer' }
+        )
+    }
+
     get type() {
         // Photoshop doesn't tell you if a group is a video group...
         // So just assume any group with *only* normal layers is a video group

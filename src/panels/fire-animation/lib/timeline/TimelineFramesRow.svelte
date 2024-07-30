@@ -7,12 +7,14 @@
         getTimelineContext,
         Row
     } from './Timeline'
-    import FrameItem from '../FrameItem.svelte'
+    import FrameItem from './FrameItem.svelte'
     import { writable } from 'svelte/store'
 
     export let frameRowWidth: number
     export let row: Row
     export let depth = 0
+
+    let expanded = row.expanded
 
     let {
         collapsedRowHeight,
@@ -26,7 +28,8 @@
         name: 'Folder',
         layer: row.layer,
         row,
-        image: writable(null)
+        image: writable(null),
+        selected: writable(false)
     }
 
     const folderFrames = row.children ? getMaxFrameCount(row.children) : 0
@@ -68,21 +71,27 @@
     }
 
     $: {
-        if (row.frames && row.expanded && !loaded) {
+        if (row.frames && $expanded && !loaded) {
             loadFrameData()
-        } else if (!row.expanded && loaded) {
+        } else if (!$expanded && loaded) {
             unloadFrameData()
         }
     }
 
     let height = 0
-    $: height = getRowHeight(row, $collapsedRowHeight, $expandedRowHeight)
+    $: height = getRowHeight(
+        row,
+        $expanded,
+        $collapsedRowHeight,
+        $expandedRowHeight
+    )
 </script>
 
 <div
     class="row"
     style="min-width: {frameRowWidth}px; {getRowHeightStyle(
         row,
+        $expanded,
         $collapsedRowHeight,
         $expandedRowHeight
     )}">
@@ -98,7 +107,7 @@
     {/if}
 </div>
 
-{#if row.children && row.expanded}
+{#if row.children && $expanded}
     {#each row.children as child}
         <svelte:self row={child} depth={depth + 1} {frameRowWidth} />
     {/each}

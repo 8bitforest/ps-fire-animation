@@ -4,9 +4,10 @@
     import { getRowHeightStyle, getTimelineContext, Row } from './Timeline'
     import RowExpander from '../RowExpander.svelte'
 
-    export let rowUpdated = () => {}
     export let row: Row
     export let depth = 0
+
+    let expanded = row.expanded
 
     const indentWidth = 30
 
@@ -15,13 +16,18 @@
 
 <div
     class="row"
-    style={getRowHeightStyle(row, $collapsedRowHeight, $expandedRowHeight)}>
+    style={getRowHeightStyle(
+        row,
+        $expanded,
+        $collapsedRowHeight,
+        $expandedRowHeight
+    )}>
     <div class="row-contents" style="height: {$collapsedRowHeight}">
         <div class="layer-name" style="margin-left: {depth * indentWidth}px">
             {#if row.children}
                 <RowExpander
-                    bind:expanded={row.expanded}
-                    onChanged={rowUpdated}
+                    expanded={$expanded}
+                    onChanged={value => ($expanded = value)}
                     folder={true} />
             {:else}
                 <div style="width: 22px" />
@@ -31,21 +37,21 @@
         <div class="right-icons">
             {#if !row.children}
                 <RowExpander
-                    bind:expanded={row.expanded}
-                    onChanged={rowUpdated} />
+                    expanded={$expanded}
+                    onChanged={value => ($expanded = value)} />
             {/if}
             <IconVisibility class="icon-visibility" />
         </div>
     </div>
 
-    {#if !row.children && row.expanded}
+    {#if !row.children && $expanded}
         <div class="layer-info"></div>
     {/if}
 </div>
 
-{#if row.children && row.expanded}
+{#if row.children && $expanded}
     {#each row.children as child}
-        <svelte:self row={child} {rowUpdated} depth={depth + 1} />
+        <svelte:self row={child} depth={depth + 1} />
     {/each}
 {/if}
 
@@ -55,10 +61,6 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-    }
-
-    .row:hover {
-        background-color: var(--color-surface-3);
     }
 
     .row-contents {

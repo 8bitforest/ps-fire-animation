@@ -13,6 +13,14 @@ interface HistoryStateChangedDescriptor {
     ID: number
 }
 
+interface SelectDescriptor {
+    layerID: number[]
+}
+
+interface SetTimelineTimeDescriptor {
+    to: { _obj: string; seconds: number; frame: number; frameRate: number }
+}
+
 async function addListener<T>(
     event: string,
     callback: (descriptor: T) => void
@@ -49,5 +57,26 @@ export class FireListeners {
                 }
             }
         )
+    }
+
+    static async addLayerSelectListener(
+        callback: (layerId: number[]) => void
+    ): Promise<void> {
+        await addListener<SelectDescriptor>('select', descriptor => {
+            console.log('select', descriptor)
+            callback(descriptor.layerID)
+        })
+    }
+
+    static async addTimelineTimeChangeListener(
+        callback: (frame: number) => void
+    ): Promise<void> {
+        await addListener<SetTimelineTimeDescriptor>('set', descriptor => {
+            if (descriptor.to._obj === 'timecode')
+                callback(
+                    descriptor.to.frameRate * descriptor.to.seconds +
+                        descriptor.to.frame
+                )
+        })
     }
 }

@@ -4,13 +4,20 @@
 
     export let row: Row
 
+    let expanded = row.expanded
+
     let { collapsedRowHeight, expandedRowHeight, addFrameColWidth } =
         getTimelineContext()
 </script>
 
 <div
     class="row"
-    style={getRowHeightStyle(row, $collapsedRowHeight, $expandedRowHeight)}>
+    style={getRowHeightStyle(
+        row,
+        $expanded,
+        $collapsedRowHeight,
+        $expandedRowHeight
+    )}>
     <div class="buttons" style="min-width: {$addFrameColWidth}px">
         {#if !row.children}
             <Text size="1.15rem">+</Text>
@@ -18,7 +25,7 @@
     </div>
 </div>
 
-{#if row.children && row.expanded}
+{#if row.children && $expanded}
     {#each row.children as child}
         <svelte:self row={child} />
     {/each}

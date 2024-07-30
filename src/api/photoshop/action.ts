@@ -9,7 +9,12 @@ export class ActionTarget {
 
     async getPropertyAsync<T>(property: string): Promise<T> {
         const result = await ps.action.batchPlay(
-            [{ _obj: 'get', _target: this._target, _property: property }],
+            [
+                {
+                    _obj: 'get',
+                    _target: [{ _property: property }, ...this._target]
+                }
+            ],
             {}
         )
         return result[0][property]
@@ -18,9 +23,16 @@ export class ActionTarget {
     // Adobe uses synchronous execution for their getters/setters despite warning against it. So we'll
     // just make sure to use it sparingly and with simple data.
     getProperty<T = any>(property: string): T {
-        return ps.action.batchPlay(
-            [{ _obj: 'get', _target: this._target, _property: property }],
-            { synchronousExecution: true }
-        ) as T
+        return (
+            ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'get',
+                        _target: [{ _property: property }, ...this._target]
+                    }
+                ],
+                { synchronousExecution: true }
+            ) as any
+        )[0][property] as T
     }
 }
