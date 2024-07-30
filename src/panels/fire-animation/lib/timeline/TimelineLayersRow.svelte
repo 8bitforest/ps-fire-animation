@@ -3,15 +3,24 @@
     import IconVisibility from '../../../../lib/components/icons/IconVisibility.svelte'
     import { getRowHeightStyle, getTimelineContext, Row } from './Timeline'
     import RowExpander from '../RowExpander.svelte'
+    import IconVisibilityOff from '../../../../lib/components/icons/IconVisibilityOff.svelte'
 
     export let row: Row
     export let depth = 0
 
     let expanded = row.expanded
+    let visible = row.visible
 
     const indentWidth = 30
 
-    let { collapsedRowHeight, expandedRowHeight } = getTimelineContext()
+    let { collapsedRowHeight, expandedRowHeight, setRowVisibility } =
+        getTimelineContext()
+
+    function toggleVisibility() {
+        setRowVisibility(row, !$visible)
+        // console.log('toggleVisibility')
+        // $visible = !$visible
+    }
 </script>
 
 <div
@@ -40,7 +49,15 @@
                     expanded={$expanded}
                     onChanged={value => ($expanded = value)} />
             {/if}
-            <IconVisibility class="icon-visibility" />
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="icon-visibility-container" on:click={toggleVisibility}>
+                {#if $visible}
+                    <IconVisibility class="icon-visibility" />
+                {:else}
+                    <IconVisibilityOff class="icon-visibility-off" />
+                {/if}
+            </div>
         </div>
     </div>
 
@@ -94,9 +111,18 @@
         align-items: center;
     }
 
-    :global(.icon-visibility) {
+    .icon-visibility-container {
         margin-left: auto;
         margin-right: 5px;
         height: 70%;
+    }
+
+    :global(.icon-visibility) {
+        height: 100%;
+    }
+
+    :global(.icon-visibility-off) {
+        height: 100%;
+        fill: #666666;
     }
 </style>

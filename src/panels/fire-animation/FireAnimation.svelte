@@ -3,8 +3,10 @@
     import {
         findFrameByLayerId,
         findFrames,
+        findRows,
         Frame,
         layersToRows,
+        Row,
         TimelineConfig
     } from './lib/timeline/Timeline'
     import Toolbar from './lib/Toolbar.svelte'
@@ -38,6 +40,7 @@
         padFrameCount: writable(3),
         thumbnailResolution: writable(300),
         selectFrame,
+        setRowVisibility,
         setScrollWidth: width => (scrollWidth = width)
     }
 
@@ -80,6 +83,11 @@
         $headIndex = frame.row.frames!.indexOf(frame)
     }
 
+    function setRowVisibility(row: Row, visible: boolean) {
+        row.layer.visible = visible
+        row.visible.set(visible)
+    }
+
     $: {
         PSTimeline.setCurrentTime($headIndex)
     }
@@ -100,6 +108,11 @@
 
     FireListeners.addTimelineTimeChangeListener(async time => {
         $headIndex = time
+    })
+
+    FireListeners.addLayerVisibilityChangeListener(async layerName => {
+        const updatedRows = findRows($rows, row => row.name === layerName)
+        for (const row of updatedRows) row.visible.set(row.layer.visible)
     })
 
     async function refreshCurrentFrame() {

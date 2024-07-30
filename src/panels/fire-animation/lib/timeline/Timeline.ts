@@ -13,6 +13,7 @@ export interface RowBase {
     color: string
     layer: FireLayer
     expanded: Writable<boolean>
+    visible: Writable<boolean>
 }
 
 export interface FolderRow extends RowBase {
@@ -48,6 +49,7 @@ export interface TimelineConfig {
     padFrameCount: Readable<number>
     thumbnailResolution: Readable<number>
     selectFrame: (frame: Frame) => void
+    setRowVisibility: (row: Row, visible: boolean) => void
     setScrollWidth: (width: number) => void
 }
 
@@ -107,6 +109,7 @@ export function layersToRows(layers: FireLayer[]): Row[] {
                         : layer.color.hex,
                 layer,
                 expanded: writable(layer.expanded),
+                visible: writable(layer.visible),
                 frames: []
             }
 
@@ -129,6 +132,7 @@ export function layersToRows(layers: FireLayer[]): Row[] {
                 color: layer.color === layerColors.none ? '' : layer.color.hex,
                 layer,
                 expanded: writable(layer.expanded),
+                visible: writable(layer.visible),
                 children: layer.children.map(makeRow)
             }
         } else {
@@ -138,6 +142,7 @@ export function layersToRows(layers: FireLayer[]): Row[] {
                 color: layer.color.hex,
                 layer,
                 expanded: writable(false),
+                visible: writable(layer.visible),
                 frames: []
             }
 
@@ -169,6 +174,17 @@ export function findRow(rows: Row[], layerId: number): Row | undefined {
             if (found) return found
         }
     }
+}
+
+export function findRows(rows: Row[], predicate: (row: Row) => boolean): Row[] {
+    const found: Row[] = []
+
+    for (const row of rows) {
+        if (predicate(row)) found.push(row)
+        if (row.children) found.push(...findRows(row.children, predicate))
+    }
+
+    return found
 }
 
 export function findFrameByLayerId(

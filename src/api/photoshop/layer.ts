@@ -82,6 +82,19 @@ export class FireLayer {
         )
     }
 
+    get visible() {
+        return this.psLayer.visible
+    }
+
+    set visible(value: boolean) {
+        ps.core.executeAsModal(
+            async () => {
+                this.psLayer.visible = value
+            },
+            { commandName: 'setLayerVisibility' }
+        )
+    }
+
     get type() {
         // Photoshop doesn't tell you if a group is a video group...
         // So just assume any group with *only* normal layers is a video group

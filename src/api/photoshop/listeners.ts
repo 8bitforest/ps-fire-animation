@@ -21,6 +21,22 @@ interface SetTimelineTimeDescriptor {
     to: { _obj: string; seconds: number; frame: number; frameRate: number }
 }
 
+interface HideDescriptor {
+    _obj: 'hide'
+    null: {
+        _ref: string
+        _name: string
+    }[]
+}
+
+interface ShowDescriptor {
+    _obj: 'show'
+    null: {
+        _ref: string
+        _name: string
+    }[]
+}
+
 async function addListener<T>(
     event: string,
     callback: (descriptor: T) => void
@@ -77,6 +93,17 @@ export class FireListeners {
                     descriptor.to.frameRate * descriptor.to.seconds +
                         descriptor.to.frame
                 )
+        })
+    }
+
+    static async addLayerVisibilityChangeListener(
+        callback: (layerName: string, visible: boolean) => void
+    ): Promise<void> {
+        await addListener<HideDescriptor>('hide', descriptor => {
+            callback(descriptor.null[0]._name, false)
+        })
+        await addListener<ShowDescriptor>('show', descriptor => {
+            callback(descriptor.null[0]._name, true)
         })
     }
 }
