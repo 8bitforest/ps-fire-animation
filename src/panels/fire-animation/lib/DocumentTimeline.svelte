@@ -104,7 +104,7 @@
 
     export async function refreshCurrentFrame() {
         const frame = findFrameByLayerId($rows, document.currentLayer.id)
-        if (frame?.row?.expanded) {
+        if (frame?.row && get(frame.row.expanded)) {
             frame.image.set(
                 await frame.layer.getBase64ImageData(
                     $thumbnailResolution,

@@ -32,7 +32,8 @@
         selected: writable(false)
     }
 
-    const folderFrames = row.children ? getMaxFrameCount(row.children) : 0
+    let folderFrames = 0
+    $: folderFrames = row.children ? getMaxFrameCount(row.children) : 0
 
     async function loadFrameData() {
         if (!row.frames || !$thumbnailResolution) return
