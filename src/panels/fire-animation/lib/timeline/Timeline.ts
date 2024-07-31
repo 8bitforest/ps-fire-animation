@@ -105,7 +105,7 @@ function makeRow(layer: FireLayer): Row {
                     ? layerColors.violet.hex
                     : layer.color.hex,
             layer,
-            expanded: writable(layer.expanded),
+            expanded: writable(false),
             visible: writable(layer.visible),
             frames: []
         }
@@ -159,14 +159,30 @@ export function updateRowsFromLayers(rows: Row[], layers: FireLayer[]) {
     function updateRows(rows: Row[], layers: ReadonlyArray<FireLayer>) {
         const newRows = []
         for (const layer of layers) {
-            const row = rows.find(row => row.id === layer.id)
+            let row = rows.find(row => row.id === layer.id)
             if (row) {
-                newRows.push(row)
-                if (row.children !== undefined)
+                const type = row.layer.type
+                if (type === FireLayerType.Group && row.children)
                     updateRows(row.children, layer.children)
-                if (row.frames !== undefined)
+                else if (type === FireLayerType.Group && !row.children)
+                    row = {
+                        ...row,
+                        children: layer.children.map(makeRow),
+                        frames: undefined
+                    }
+                else if (type === FireLayerType.Video && row.frames)
                     updateFrames(row, row.frames, layer.children)
-            } else newRows.push(makeRow(layer))
+                else if (type === FireLayerType.Video && !row.frames) {
+                    row = { ...row, frames: [], children: undefined }
+                    row.frames = layer.children.map(frame =>
+                        makeFrame(row!, frame)
+                    )
+                }
+            } else {
+                row = makeRow(layer)
+            }
+
+            newRows.push(row)
         }
         rows.length = newRows.length
         rows.splice(0, newRows.length, ...newRows)
