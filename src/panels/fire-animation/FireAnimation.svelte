@@ -64,6 +64,18 @@
     })
 
     FireListeners.addHistoryStateListener(async () => {
+        await fullRefresh()
+    })
+
+    let refreshing = false
+    let needsRefresh = false
+    async function fullRefresh() {
+        if (refreshing) {
+            needsRefresh = true
+            return
+        }
+
+        refreshing = true
         const startTime = performance.now()
 
         const documentId = FireDocument.current.id
@@ -84,9 +96,15 @@
             performance.now() - startTime,
             'ms'
         )
-    })
 
-    FireListeners.addLayerSelectListener(async layerIds => {
+        refreshing = false
+        if (needsRefresh) {
+            needsRefresh = false
+            await fullRefresh()
+        }
+    }
+
+    FireListeners.addLayerSelectListener(async () => {
         currentDocumentTimeline?.refreshSelectedFrames()
     })
 
