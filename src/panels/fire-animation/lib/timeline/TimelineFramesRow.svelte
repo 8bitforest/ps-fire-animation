@@ -20,7 +20,9 @@
         collapsedRowHeight,
         expandedRowHeight,
         frameWidth,
-        thumbnailResolution
+        thumbnailResolution,
+        padFrameCount,
+        frameColCount
     } = getTimelineContext()
 
     const folderFrame: Frame = {
@@ -80,7 +82,12 @@
         $collapsedRowHeight,
         $expandedRowHeight
     )}">
-    {#if !row.children}
+    {#if row.frames?.length === 1 && row.frames[0].id === row.frames[0].row.id}
+        <FrameItem
+            frame={row.frames[0]}
+            width={($frameColCount - $padFrameCount) * $frameWidth}
+            {height} />
+    {:else if row.frames}
         {#each row.frames as frame (frame.id)}
             <FrameItem {frame} width={$frameWidth} {height} />
         {/each}

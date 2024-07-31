@@ -30,7 +30,9 @@
     }
 </script>
 
-<div class="ps-layer-thumbnail">
+<div
+    class="ps-layer-thumbnail"
+    style="max-width: {width}px; max-height: {height}px;">
     {#if data}
         <img
             src="data:image/jpeg;base64,{data.base64}"

@@ -126,7 +126,10 @@ function makeRow(layer: FireLayer): Row {
         const row: FrameRow = {
             id: layer.id,
             name: layer.name,
-            color: layer.color.hex,
+            color:
+                layer.color === layerColors.none
+                    ? layerColors.violet.hex
+                    : layer.color.hex,
             layer,
             expanded: writable(false),
             visible: writable(layer.visible),
