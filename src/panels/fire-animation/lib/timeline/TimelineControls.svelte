@@ -4,15 +4,12 @@
     import IconArrowLeft from '../../../../lib/components/icons/IconArrowLeft.svelte'
     import IconArrowRight from '../../../../lib/components/icons/IconArrowRight.svelte'
     import IconDuplicate from '../../../../lib/components/icons/IconDuplicate.svelte'
-    import IconPlay from '../../../../lib/components/icons/IconPlay.svelte'
     import IconDelete from '../../../../lib/components/icons/IconDelete.svelte'
     import IconCollapseAll from '../../../../lib/components/icons/IconCollapseAll.svelte'
     import { getTimelineContext, Row } from './Timeline'
-    import IconStop from '../../../../lib/components/icons/IconStop.svelte'
     import IconAdd from '../../../../lib/components/icons/IconAdd.svelte'
 
     let { rows } = getTimelineContext()
-    let playing = false
 
     function onCollapseAll() {
         function collapseAll(row: Row) {
@@ -25,11 +22,6 @@
 
     function onToBeginning() {
         console.log('to beginning')
-    }
-
-    function onPlayPause() {
-        playing = !playing
-        console.log('play')
     }
 
     function onPreviousFrame() {
@@ -57,41 +49,22 @@
     <IconButton tooltip="Collapse all" click={onCollapseAll}>
         <IconCollapseAll />
     </IconButton>
-    <IconButton
-        tooltip="Go to first frame"
-        click={onToBeginning}
-        disabled={playing}>
+    <IconButton tooltip="Go to first frame" click={onToBeginning}>
         <IconRewind />
     </IconButton>
-    <IconButton
-        tooltip="Go to previous frame"
-        click={onPreviousFrame}
-        disabled={playing}>
+    <IconButton tooltip="Go to previous frame" click={onPreviousFrame}>
         <IconArrowLeft />
     </IconButton>
-    <IconButton tooltip="Play/Stop" click={onPlayPause}>
-        {#if playing}
-            <IconStop />
-        {:else}
-            <IconPlay />
-        {/if}
-    </IconButton>
-    <IconButton
-        tooltip="Go to next frame"
-        click={onNextFrame}
-        disabled={playing}>
+    <IconButton tooltip="Go to next frame" click={onNextFrame}>
         <IconArrowRight />
     </IconButton>
-    <IconButton tooltip="New frame" click={onNewFrame} disabled={playing}>
+    <IconButton tooltip="New frame" click={onNewFrame}>
         <IconAdd />
     </IconButton>
-    <IconButton
-        tooltip="Duplicate frame"
-        click={onDuplicateFrame}
-        disabled={playing}>
+    <IconButton tooltip="Duplicate frame" click={onDuplicateFrame}>
         <IconDuplicate />
     </IconButton>
-    <IconButton tooltip="Delete frame" click={onDeleteFrame} disabled={playing}>
+    <IconButton tooltip="Delete frame" click={onDeleteFrame}>
         <IconDelete />
     </IconButton>
 </div>

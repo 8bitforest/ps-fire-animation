@@ -14,7 +14,12 @@ interface HistoryStateChangedDescriptor {
 }
 
 interface SelectDescriptor {
-    layerID: number[]
+    _obj: 'select'
+    _target: {
+        _ref: 'layer' | 'document'
+    }[]
+    layerID?: number[]
+    documentID?: number
 }
 
 interface SetTimelineTimeDescriptor {
@@ -35,6 +40,16 @@ interface ShowDescriptor {
         _ref: string
         _name: string
     }[]
+}
+
+interface CloseDescriptor {
+    _obj: 'close'
+    documentID: number
+}
+
+interface newDocumentDescriptor {
+    _obj: 'newDocument'
+    documentID: number
 }
 
 async function addListener<T>(
@@ -79,8 +94,33 @@ export class FireListeners {
         callback: (layerId: number[]) => void
     ): Promise<void> {
         await addListener<SelectDescriptor>('select', descriptor => {
-            console.log('select', descriptor)
-            callback(descriptor.layerID)
+            if (descriptor._target[0]._ref === 'layer')
+                callback(descriptor.layerID!)
+        })
+    }
+
+    static async addNewDocumentListener(
+        callback: (documentId: number) => void
+    ): Promise<void> {
+        await addListener<newDocumentDescriptor>('newDocument', descriptor => {
+            callback(descriptor.documentID)
+        })
+    }
+
+    static async addCloseDocumentListener(
+        callback: (documentId: number) => void
+    ): Promise<void> {
+        await addListener<CloseDescriptor>('close', descriptor => {
+            callback(descriptor.documentID)
+        })
+    }
+
+    static async addSelectDocumentListener(
+        callback: (documentId: number) => void
+    ): Promise<void> {
+        await addListener<SelectDescriptor>('select', descriptor => {
+            if (descriptor._target[0]._ref === 'document')
+                callback(descriptor.documentID!)
         })
     }
 

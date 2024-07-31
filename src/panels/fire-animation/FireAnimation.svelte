@@ -1,156 +1,116 @@
 <script lang="ts">
-    import Timeline from './lib/timeline/Timeline.svelte'
-    import {
-        findFrameByLayerId,
-        findFrames,
-        findRows,
-        Frame,
-        layersToRows,
-        Row,
-        TimelineConfig
-    } from './lib/timeline/Timeline'
     import Toolbar from './lib/Toolbar.svelte'
-    import { get, writable } from 'svelte/store'
-    import IconImage from '../../lib/components/icons/IconImage.svelte'
     import { FireDocument } from '../../api/photoshop/document'
     import { FireListeners } from '../../api/photoshop/listeners'
-    import { Timeline as PSTimeline } from '../../api/photoshop/timeline'
+    import DocumentTimeline from './lib/DocumentTimeline.svelte'
+    import { onMount } from 'svelte'
+    import { Timeline } from '../../api/photoshop/timeline'
+    import Text from '../../lib/components/Text.svelte'
 
-    let document = FireDocument.current
-    const collapsedRowHeight = 20
-    const canvasAspect = document.aspectRatio
-    const frameWidthMin = collapsedRowHeight * canvasAspect * 2
-    const frameWidthMax = 300
-    const defaultFrameWidth = 100
-    let scrollWidth = 0
+    let container: HTMLElement
+    const documentTimelines = new Map<number, DocumentTimeline>()
+    let currentDocumentTimeline: DocumentTimeline | undefined
 
-    let currentTime = PSTimeline.getCurrentTime()
+    onMount(() => {
+        getOrCreateDocumentTimeline(FireDocument.current.id)
+        switchToCurrentDocumentTimeline()
+    })
 
-    let config: TimelineConfig = {
-        rows: writable(layersToRows(document.getLayers())),
-        frameWidth: writable(defaultFrameWidth),
-        layerColWidth: writable(300),
-        addFrameColWidth: writable(50),
-        collapsedRowHeight: writable(20),
-        expandedRowHeight: writable(defaultFrameWidth / canvasAspect),
-        scrollPercentage: writable(0),
-        headIndex: writable(
-            currentTime.frameRate * currentTime.seconds + currentTime.frame
-        ),
-        padFrameCount: writable(3),
-        thumbnailResolution: writable(300),
-        selectFrame,
-        setRowVisibility,
-        setScrollWidth: width => (scrollWidth = width)
-    }
+    function getOrCreateDocumentTimeline(documentId: number) {
+        if (documentTimelines.has(documentId))
+            return documentTimelines.get(documentId)
 
-    let {
-        rows,
-        scrollPercentage,
-        frameWidth,
-        expandedRowHeight,
-        thumbnailResolution,
-        headIndex
-    } = config
-
-    let ticking = false
-
-    function onScroll(event: Event) {
-        if (ticking) return
-        ticking = true
-
-        window.requestAnimationFrame(() => {
-            const target = event.target as HTMLElement
-            const width = target.scrollWidth - target.clientWidth
-            let percent = target.scrollLeft / (width - 10)
-            $scrollPercentage = Math.min(1, Math.max(0, percent))
-            ticking = false
+        const documentTimeline = new DocumentTimeline({
+            target: container,
+            props: {
+                document: FireDocument.fromId(documentId)
+            }
         })
+        documentTimelines.set(documentId, documentTimeline)
+        return documentTimeline
     }
 
-    function onZoom(event: Event) {
-        const target = event.target as HTMLInputElement
-        $frameWidth = +target.value
-        $expandedRowHeight = $frameWidth / canvasAspect
-        config = config
+    function switchToCurrentDocumentTimeline() {
+        const id = FireDocument.current.id
+        const timelineEnabled = Timeline.enabled
+        if (!timelineEnabled) {
+            currentDocumentTimeline = undefined
+            for (const [, documentTimeline] of documentTimelines)
+                documentTimeline.$set({ visible: false })
+            return
+        }
+
+        currentDocumentTimeline = getOrCreateDocumentTimeline(id)
+        for (const [documentId, documentTimeline] of documentTimelines) {
+            documentTimeline.$set({ visible: documentId === id })
+        }
     }
 
-    function selectFrame(frame: Frame) {
-        frame.layer.select()
-        const oldFrames = findFrames($rows, frame => get(frame.selected))
-        for (const frame of oldFrames) frame.selected.set(false)
-        frame.selected.set(true)
-        $headIndex = frame.row.frames!.indexOf(frame)
-    }
+    FireListeners.addNewDocumentListener(async () => {
+        switchToCurrentDocumentTimeline()
+    })
 
-    function setRowVisibility(row: Row, visible: boolean) {
-        row.layer.visible = visible
-        row.visible.set(visible)
-    }
+    FireListeners.addSelectDocumentListener(async () => {
+        switchToCurrentDocumentTimeline()
+    })
 
-    $: {
-        PSTimeline.setCurrentTime($headIndex)
-    }
+    FireListeners.addCloseDocumentListener(async documentId => {
+        const documentTimeline = documentTimelines.get(documentId)
+        if (documentTimeline) {
+            documentTimeline.$destroy()
+            documentTimelines.delete(documentId)
+        }
+        switchToCurrentDocumentTimeline()
+    })
 
     FireListeners.addHistoryStateListener(async () => {
-        await refreshCurrentFrame()
+        const startTime = performance.now()
+
+        const documentId = FireDocument.current.id
+        const timelineEnabled = Timeline.enabled
+        const existingTimeline = documentTimelines.get(documentId)
+        if (!timelineEnabled && existingTimeline) {
+            existingTimeline.$destroy()
+            documentTimelines.delete(documentId)
+        }
+        switchToCurrentDocumentTimeline()
+
+        currentDocumentTimeline?.refreshRows()
+        await currentDocumentTimeline?.refreshCurrentFrame()
+        currentDocumentTimeline?.refreshSelectedFrames()
+
+        console.log(
+            'History state update took',
+            performance.now() - startTime,
+            'ms'
+        )
     })
 
     FireListeners.addLayerSelectListener(async layerIds => {
-        const oldFrames = findFrames($rows, frame => get(frame.selected))
-        for (const frame of oldFrames) frame.selected.set(false)
-
-        const newFrames = findFrames($rows, frame =>
-            layerIds.includes(frame.layer.id)
-        )
-        for (const frame of newFrames) frame.selected.set(true)
+        currentDocumentTimeline?.refreshSelectedFrames()
     })
 
     FireListeners.addTimelineTimeChangeListener(async time => {
-        $headIndex = time
+        currentDocumentTimeline?.timelineTimeChanged(time)
     })
 
     FireListeners.addLayerVisibilityChangeListener(async layerName => {
-        const updatedRows = findRows($rows, row => row.name === layerName)
-        for (const row of updatedRows) row.visible.set(row.layer.visible)
+        currentDocumentTimeline?.layerVisibilityChanged(layerName)
     })
-
-    async function refreshCurrentFrame() {
-        const frame = findFrameByLayerId($rows, document.currentLayer.id)
-        if (frame?.row?.expanded) {
-            frame.image.set(
-                await frame.layer.getBase64ImageData(
-                    $thumbnailResolution,
-                    $thumbnailResolution
-                )
-            )
-        }
-    }
 </script>
 
-<div class="fire-animation">
+<div class="fire-animation" bind:this={container}>
     <div class="toolbar">
         <Toolbar />
     </div>
-    <div class="timeline">
-        <Timeline {config} />
-    </div>
-    <div class="footer">
-        <IconImage class="zoom-icon-small" />
-        <input
-            type="range"
-            min={frameWidthMin}
-            max={frameWidthMax}
-            value={config.frameWidth}
-            on:input={onZoom} />
-        <IconImage class="zoom-icon-large" />
-        <div class="scroll-bar-container">
-            <div class="scroll-bar" on:scroll={onScroll}>
-                <div class="scroll-bar-inner" style="min-width: {scrollWidth}">
-                </div>
-            </div>
+    {#if !currentDocumentTimeline}
+        <div class="timeline-error">
+            <Text
+                >To use Fire Animation, create a video timeline (<b>not</b> frame
+                animation) for this document.
+            </Text>
         </div>
-    </div>
+    {/if}
 </div>
 
 <style>
@@ -168,48 +128,12 @@
         margin-bottom: 15px;
     }
 
-    .timeline {
-        flex-grow: 1;
-        height: 0;
-    }
-
-    .footer {
-        flex-shrink: 0;
-        padding-left: 16px;
-        margin-right: 16px;
-        background-color: var(--color-surface-1);
-        border-top: 1px solid var(--color-border);
-        height: 20px;
+    .timeline-error {
         display: flex;
+        justify-content: center;
         align-items: center;
-        flex-direction: row;
-    }
-
-    :global(.zoom-icon-small) {
-        height: 75%;
-        margin-right: -10px;
-    }
-
-    :global(.zoom-icon-large) {
-        height: 100%;
-        margin-left: -10px;
-        margin-right: 16px;
-    }
-
-    .scroll-bar-container {
-        height: 100%;
-        width: 100%;
-        background-color: var(--color-scrollbar);
-    }
-
-    .scroll-bar {
-        overflow-x: scroll;
-        height: 100%;
-        position: relative;
-        top: -3px;
-    }
-
-    .scroll-bar-inner {
-        height: 0;
+        flex-grow: 1;
+        padding: 25px;
+        text-align: center;
     }
 </style>

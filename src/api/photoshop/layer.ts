@@ -60,26 +60,23 @@ export class FireLayer {
     }
 
     async select() {
-        await ps.core.executeAsModal(
-            async () => {
-                await ps.action.batchPlay(
-                    [
-                        {
-                            _obj: 'select',
-                            _target: [
-                                {
-                                    _ref: 'layer',
-                                    _id: this.psLayer.id
-                                }
-                            ],
-                            layerID: [this.psLayer.id]
-                        }
-                    ],
-                    {}
-                )
-            },
-            { commandName: 'selectLayer' }
-        )
+        await this.psLayer.document.suspendHistory(async () => {
+            await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'select',
+                        _target: [
+                            {
+                                _ref: 'layer',
+                                _id: this.psLayer.id
+                            }
+                        ],
+                        layerID: [this.psLayer.id]
+                    }
+                ],
+                {}
+            )
+        }, 'Select Layer')
     }
 
     get visible() {
@@ -87,12 +84,9 @@ export class FireLayer {
     }
 
     set visible(value: boolean) {
-        ps.core.executeAsModal(
-            async () => {
-                this.psLayer.visible = value
-            },
-            { commandName: 'setLayerVisibility' }
-        )
+        this.psLayer.document.suspendHistory(() => {
+            this.psLayer.visible = value
+        }, 'Set Layer Visibility')
     }
 
     get type() {
@@ -114,7 +108,7 @@ export class FireLayer {
     }
 
     get color() {
-        const psColor = this._target.getProperty('color')['_value']
+        const psColor = this._target.getProperty('color')?.['_value'] ?? 'none'
         return (
             Object.values(layerColors).find(c => c.value === psColor) ||
             layerColors.none
@@ -135,12 +129,26 @@ export class FireLayer {
     ): Promise<FireLayerTrimmedImageData> {
         return ps.core.executeAsModal(
             async () => {
-                const imageObj = await ps.imaging.getPixels({
-                    layerID: this.psLayer.id,
-                    targetSize: { width, height },
-                    componentSize: 8,
-                    applyAlpha: true
-                })
+                let imageObj
+                try {
+                    imageObj = await ps.imaging.getPixels({
+                        layerID: this.psLayer.id,
+                        targetSize: { width, height },
+                        componentSize: 8,
+                        applyAlpha: true
+                    })
+                } catch (e) {
+                    // If there are no pixels in the error, this will throw
+                    return {
+                        base64: '',
+                        x: 0,
+                        y: 0,
+                        width: 0,
+                        height: 0,
+                        fullWidth: 0,
+                        fullHeight: 0
+                    }
+                }
 
                 const base64 = (await ps.imaging.encodeImageData({
                     imageData: imageObj.imageData,

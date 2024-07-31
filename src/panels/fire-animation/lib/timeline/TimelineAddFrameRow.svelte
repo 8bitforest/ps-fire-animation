@@ -26,7 +26,7 @@
 </div>
 
 {#if row.children && $expanded}
-    {#each row.children as child}
+    {#each row.children as child (child.id)}
         <svelte:self row={child} />
     {/each}
 {/if}

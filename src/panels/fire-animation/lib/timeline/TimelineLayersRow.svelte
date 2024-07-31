@@ -18,8 +18,6 @@
 
     function toggleVisibility() {
         setRowVisibility(row, !$visible)
-        // console.log('toggleVisibility')
-        // $visible = !$visible
     }
 </script>
 
@@ -67,7 +65,7 @@
 </div>
 
 {#if row.children && $expanded}
-    {#each row.children as child}
+    {#each row.children as child (child.id)}
         <svelte:self row={child} depth={depth + 1} />
     {/each}
 {/if}

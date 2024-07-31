@@ -92,78 +92,104 @@ export function getRowHeightStyle(
     return `min-height: ${height}px; max-height: ${height}px; height: ${height}px;`
 }
 
+function makeRow(layer: FireLayer): Row {
+    if (layer.type === FireLayerType.Video) {
+        let frames = [...layer.children]
+        frames.reverse()
+
+        const row: Row = {
+            id: layer.id,
+            name: layer.name,
+            color:
+                layer.color === layerColors.none
+                    ? layerColors.violet.hex
+                    : layer.color.hex,
+            layer,
+            expanded: writable(layer.expanded),
+            visible: writable(layer.visible),
+            frames: []
+        }
+
+        row.frames = frames.map(frame => makeFrame(row, frame))
+        return row
+    } else if (layer.type === FireLayerType.Group) {
+        return {
+            id: layer.id,
+            name: layer.name,
+            color: layer.color === layerColors.none ? '' : layer.color.hex,
+            layer,
+            expanded: writable(layer.expanded),
+            visible: writable(layer.visible),
+            children: layer.children.map(makeRow)
+        }
+    } else {
+        const row: FrameRow = {
+            id: layer.id,
+            name: layer.name,
+            color: layer.color.hex,
+            layer,
+            expanded: writable(false),
+            visible: writable(layer.visible),
+            frames: []
+        }
+
+        row.frames = [makeFrame(row, layer)]
+        return row
+    }
+}
+
+function makeFrame(parent: Row, layer: FireLayer): Frame {
+    return {
+        id: layer.id,
+        name: layer.name,
+        layer,
+        row: parent,
+        image: writable(null),
+        selected: writable(layer.selected)
+    }
+}
+
 export function layersToRows(layers: FireLayer[]): Row[] {
     const rows = []
+    for (const layer of layers) rows.push(makeRow(layer))
+    return rows
+}
 
-    function makeRow(layer: FireLayer): Row {
-        if (layer.type === FireLayerType.Video) {
-            let frames = [...layer.children]
-            frames.reverse()
-
-            const row: FrameRow = {
-                id: layer.id,
-                name: layer.name,
-                color:
-                    layer.color === layerColors.none
-                        ? layerColors.violet.hex
-                        : layer.color.hex,
-                layer,
-                expanded: writable(layer.expanded),
-                visible: writable(layer.visible),
-                frames: []
-            }
-
-            row.frames = frames.map(child => {
-                return {
-                    id: child.id,
-                    name: child.name,
-                    layer: child,
-                    row,
-                    image: writable(null),
-                    selected: writable(child.selected)
-                }
-            })
-
-            return row
-        } else if (layer.type === FireLayerType.Group) {
-            return {
-                id: layer.id,
-                name: layer.name,
-                color: layer.color === layerColors.none ? '' : layer.color.hex,
-                layer,
-                expanded: writable(layer.expanded),
-                visible: writable(layer.visible),
-                children: layer.children.map(makeRow)
-            }
-        } else {
-            const row: FrameRow = {
-                id: layer.id,
-                name: layer.name,
-                color: layer.color.hex,
-                layer,
-                expanded: writable(false),
-                visible: writable(layer.visible),
-                frames: []
-            }
-
-            row.frames = [
-                {
-                    id: layer.id,
-                    name: layer.name,
-                    layer,
-                    row,
-                    image: writable(null),
-                    selected: writable(layer.selected)
-                }
-            ]
-
-            return row
+export function updateRowsFromLayers(rows: Row[], layers: FireLayer[]) {
+    function updateRows(rows: Row[], layers: ReadonlyArray<FireLayer>) {
+        const newRows = []
+        for (const layer of layers) {
+            const row = rows.find(row => row.id === layer.id)
+            if (row) {
+                newRows.push(row)
+                if (row.children !== undefined)
+                    updateRows(row.children, layer.children)
+                if (row.frames !== undefined)
+                    updateFrames(row, row.frames, layer.children)
+            } else newRows.push(makeRow(layer))
         }
+        rows.length = newRows.length
+        rows.splice(0, newRows.length, ...newRows)
     }
 
-    for (const layer of layers) rows.push(makeRow(layer))
+    function updateFrames(
+        parent: Row,
+        frames: Frame[],
+        layers: ReadonlyArray<FireLayer>
+    ) {
+        const newFrames = []
+        let reversed = [...layers]
+        reversed.reverse()
+        for (const layer of reversed) {
+            const frame = frames.find(frame => frame.id === layer.id)
+            if (frame) newFrames.push(frame)
+            else newFrames.push(makeFrame(parent, layer))
+        }
+        frames.length = newFrames.length
+        frames.splice(0, newFrames.length, ...newFrames)
+    }
 
-    return rows
+    updateRows(rows, layers)
 }
 
 export function findRow(rows: Row[], layerId: number): Row | undefined {

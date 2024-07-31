@@ -85,13 +85,13 @@
         <div class="timeline-body-scroll">
             <div class="timeline-body">
                 <div class="layers-col" style="min-width: {$layerColWidth};">
-                    {#each $rows as row}
+                    {#each $rows as row (row.id)}
                         <TimelineLayersRow {row} />
                     {/each}
                 </div>
                 <div class="frames-col" style="left: -{$scrollOffset}px">
                     <TimelineCurrentFrameHighlight />
-                    {#each $rows as row}
+                    {#each $rows as row (row.id)}
                         <TimelineFramesRow {row} {frameRowWidth} />
                     {/each}
                 </div>
@@ -101,7 +101,7 @@
                     <div
                         class="add-frame-col"
                         style="min-width: {$addFrameColWidth + scrollbarSize}">
-                        {#each $rows as row}
+                        {#each $rows as row (row.id)}
                             <TimelineAddFrameRow {row} />
                         {/each}
                     </div>

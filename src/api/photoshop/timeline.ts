@@ -12,6 +12,11 @@ export class Timeline {
     static _target = new ActionTarget([
         { _ref: 'timeline', _enum: 'ordinal', _value: 'targetEnum' }
     ])
+
+    static get enabled(): boolean {
+        return this._target.getProperty<boolean>('enabled')
+    }
+
     static getCurrentTime(): Timecode {
         return this._target.getProperty<Timecode>('time')
     }
@@ -39,7 +44,7 @@ export class Timeline {
                     {}
                 )
             },
-            { commandName: 'set current time' }
+            { commandName: 'Set current time' }
         )
     }
 }

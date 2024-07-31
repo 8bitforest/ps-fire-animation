@@ -8,7 +8,7 @@
         Row
     } from './Timeline'
     import FrameItem from './FrameItem.svelte'
-    import { writable } from 'svelte/store'
+    import { get, writable } from 'svelte/store'
 
     export let frameRowWidth: number
     export let row: Row
@@ -34,46 +34,30 @@
 
     const folderFrames = row.children ? getMaxFrameCount(row.children) : 0
 
-    let loaded = false
-
     async function loadFrameData() {
-        if (loaded || !row.frames || !$thumbnailResolution) return
+        if (!row.frames || !$thumbnailResolution) return
         for (const frame of row.frames) {
-            try {
-                frame.image.set(
-                    await frame.layer.getBase64ImageData(
-                        $thumbnailResolution,
-                        $thumbnailResolution
-                    )
+            if (get(frame.image)) continue
+            frame.image.set(
+                await frame.layer.getBase64ImageData(
+                    $thumbnailResolution,
+                    $thumbnailResolution
                 )
-            } catch (e) {
-                frame.image.set({
-                    base64: '',
-                    x: 0,
-                    y: 0,
-                    height: 0,
-                    width: 0,
-                    fullHeight: 0,
-                    fullWidth: 0
-                })
-            }
+            )
         }
-
-        loaded = true
         row = row
     }
 
     function unloadFrameData() {
-        if (!loaded || !row.frames) return
+        if (!row.frames) return
         for (const frame of row.frames) frame.image.set(null)
-        loaded = false
         row = row
     }
 
     $: {
-        if (row.frames && $expanded && !loaded) {
+        if (row.frames && $expanded) {
             loadFrameData()
-        } else if (!$expanded && loaded) {
+        } else if (!$expanded) {
             unloadFrameData()
         }
     }
@@ -108,7 +92,7 @@
 </div>
 
 {#if row.children && $expanded}
-    {#each row.children as child}
+    {#each row.children as child (child.id)}
         <svelte:self row={child} depth={depth + 1} {frameRowWidth} />
     {/each}
 {/if}

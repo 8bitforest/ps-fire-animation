@@ -11,7 +11,13 @@
     let imgHeight: number
 
     $: {
-        if (!data || !data.fullWidth || !data.fullHeight) break $
+        if (!data || !data.fullWidth || !data.fullHeight) {
+            x = 0
+            y = 0
+            imgWidth = 0
+            imgHeight = 0
+            break $
+        }
 
         const xPercent = data.x / data.fullWidth
         const yPercent = data.y / data.fullHeight

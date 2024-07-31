@@ -1,3 +1,10 @@
+<script lang="ts" context="module">
+    const border = 1
+    const margin = 2
+    const padding = 4
+    export const borderSize = border + margin + padding
+</script>
+
 <script lang="ts">
     import { lightenDarkenColor } from '../../../../lib/utils'
     import PSLayerThumbnail from '../PSLayerThumbnail.svelte'
@@ -13,10 +20,6 @@
     let image = frame.image
     let color = frame.row.color || defaultColor
     let borderColor = lightenDarkenColor(color, 60)
-
-    const border = 1
-    const margin = 2
-    const padding = 4
 
     let thumbnailHeight = 0
     let thumbnailWidth = 0

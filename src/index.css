@@ -24,3 +24,16 @@ svg {
         --color-button-active: #1f1f1f;
     }
 }
+
+/*noinspection CssInvalidMediaFeature*/
+@media (prefers-color-scheme: dark) {
+    :root {
+        --icon-fill: #cccccc;
+        --color-surface-2: #555555;
+        --color-surface-3: #4d4d4d;
+        --color-surface-4: #3e3e3e;
+        --color-scrollbar: #4a4a4a;
+        --color-button-hover: #3e3e3e;
+        --color-button-active: #333333;
+    }
+}
