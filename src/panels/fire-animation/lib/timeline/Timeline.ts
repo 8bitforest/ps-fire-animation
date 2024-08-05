@@ -44,13 +44,19 @@ export interface TimelineConfig {
     addFrameColWidth: Readable<number>
     collapsedRowHeight: Readable<number>
     expandedRowHeight: Readable<number>
-    scrollPercentage: Readable<number>
+    scrollX: Writable<number>
     headIndex: Writable<number>
     padFrameCount: Readable<number>
     thumbnailResolution: Readable<number>
+
     selectFrame: (frame: Frame) => void
     setRowVisibility: (row: Row, visible: boolean) => void
     setScrollWidth: (width: number) => void
+    timelineResized: (frameColWidth: number) => void
+    createEmptyFrame: (row: Row, index: number) => void
+    createDuplicateFrame: (frame: Frame) => void
+    previousFrame: () => void
+    nextFrame: () => void
 }
 
 export interface TimelineContext extends TimelineConfig {
@@ -181,6 +187,9 @@ export function updateRowsFromLayers(rows: Row[], layers: FireLayer[]) {
                         makeFrame(row!, frame)
                     )
                 }
+
+                row.color =
+                    layer.color === layerColors.none ? '' : layer.color.hex
             } else {
                 row = makeRow(layer)
             }

@@ -33,6 +33,53 @@ export class FireDocument {
         return this.psDocument.layers.map(layer => new FireLayer(layer))
     }
 
+    async createFrame(using: any = {}): Promise<FireLayer> {
+        await this.psDocument.suspendHistory(async () => {
+            let result = await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'make',
+                        _target: [{ _ref: 'layer' }],
+                        using
+                    },
+                    {
+                        _obj: 'moveOutTime',
+                        timeOffset: {
+                            _obj: 'timecode',
+                            frame: -9999,
+                            frameRate: 0,
+                            seconds: 0
+                        }
+                    }
+                ],
+                {}
+            )
+        }, 'Create Layer')
+
+        return new FireLayer(this.psDocument.activeLayers[0])
+    }
+
+    async duplicateLayer(layer: FireLayer): Promise<FireLayer> {
+        await this.psDocument.suspendHistory(async () => {
+            let result = await ps.action.batchPlay(
+                [
+                    {
+                        _obj: 'duplicate',
+                        _target: [
+                            {
+                                _ref: 'layer',
+                                _id: layer.id
+                            }
+                        ]
+                    }
+                ],
+                {}
+            )
+        }, 'Duplicate Layer')
+
+        return new FireLayer(this.psDocument.activeLayers[0])
+    }
+
     get canvasSize() {
         return {
             width: this.psDocument.width,

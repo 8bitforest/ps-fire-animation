@@ -1,6 +1,5 @@
 /*noinspection CssUnresolvedCustomProperty*/
 :root {
-    --icon-fill: #000000;
     --color-surface-1: var(--uxp-host-background-color);
     --color-border: var(--color-surface-4);
     --color-playhead: #346bff;
@@ -16,6 +15,7 @@ svg {
 @media (prefers-color-scheme: darkest) {
     :root {
         --icon-fill: #aaaaaa;
+        --icon-hover-fill: #eeeeee;
         --color-surface-2: #2f2f2f;
         --color-surface-3: #2b2b2b;
         --color-surface-4: #262626;
@@ -29,6 +29,7 @@ svg {
 @media (prefers-color-scheme: dark) {
     :root {
         --icon-fill: #cccccc;
+        --icon-hover-fill: #eeeeee;
         --color-surface-2: #555555;
         --color-surface-3: #4d4d4d;
         --color-surface-4: #3e3e3e;

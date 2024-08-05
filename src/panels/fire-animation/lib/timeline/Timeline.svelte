@@ -10,7 +10,7 @@
     import TimelineFramesHeader from './TimelineFramesHeader.svelte'
     import TimelinePlayhead from './TimelinePlayhead.svelte'
     import TimelineCurrentFrameHighlight from './TimelineCurrentFrameHighlight.svelte'
-    import { onMount, setContext } from 'svelte'
+    import { setContext } from 'svelte'
     import TimelineAddFrameRow from './TimelineAddFrameRow.svelte'
     import { writable } from 'svelte/store'
     import { scrollbarSize } from '../../../../lib/utils'
@@ -33,43 +33,33 @@
         frameWidth,
         layerColWidth,
         addFrameColWidth,
-        scrollPercentage,
+        scrollX,
         padFrameCount,
-        setScrollWidth
+        setScrollWidth,
+        timelineResized
     } = context
 
+    let frameColWidth = 0
     let frameRowWidth: number
     $: {
         $frameColCount = getMaxFrameCount($rows) + $padFrameCount
         frameRowWidth = $frameColCount * $frameWidth
-        setScrollWidth(frameRowWidth + $layerColWidth + $addFrameColWidth)
+        setScrollWidth(frameRowWidth)
     }
 
-    let timelineElement: HTMLElement
-    let timelineVisibleWidth = 0
-
-    // clientWidth is 0 on mount, so we need to wait for it to be set
-    onMount(() => {
-        const interval = setInterval(() => {
-            if (timelineElement?.clientWidth) {
-                clearInterval(interval)
-                timelineVisibleWidth = timelineElement.clientWidth
-            }
-        }, 10)
-    })
-
     $: {
-        $scrollOffset =
-            $scrollPercentage *
-            (frameRowWidth -
-                timelineVisibleWidth +
-                $layerColWidth +
-                $addFrameColWidth +
-                scrollbarSize)
+        $scrollOffset = $scrollX
+    }
+
+    function onTimelineResize(event: UIEvent) {
+        const element = event.target as HTMLElement
+        const width = element.clientWidth
+        frameColWidth = width
+        timelineResized(width)
     }
 </script>
 
-<div class="timeline" bind:this={timelineElement}>
+<div class="timeline">
     <div class="timeline-header">
         <div
             class="timeline-layers-header"
@@ -79,7 +69,7 @@
         <div class="timeline-frames-header" style="left: -{$scrollOffset}px">
             <TimelineFramesHeader />
         </div>
-        <TimelinePlayhead timelineWidth={timelineVisibleWidth} />
+        <TimelinePlayhead {frameColWidth} />
     </div>
     <div class="timeline-body-container">
         <div class="timeline-body-scroll">
@@ -89,7 +79,10 @@
                         <TimelineLayersRow {row} />
                     {/each}
                 </div>
-                <div class="frames-col" style="left: -{$scrollOffset}px">
+                <div
+                    class="frames-col"
+                    style="left: -{$scrollOffset}px"
+                    on:resize={onTimelineResize}>
                     <TimelineCurrentFrameHighlight />
                     {#each $rows as row (row.id)}
                         <TimelineFramesRow {row} {frameRowWidth} />

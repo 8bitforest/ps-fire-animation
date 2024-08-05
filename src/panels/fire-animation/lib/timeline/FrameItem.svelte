@@ -50,7 +50,7 @@
     on:click={clickHandler}
     style="
         background-color: {color};
-        border: 1px solid {borderColor};
+        border: 2px solid {borderColor};
         width: {width - 4}px;
         min-width: {width - 4}px;
     ">
@@ -66,16 +66,14 @@
     .timeline-frame {
         margin: 2px;
         border-radius: 6px;
-        position: relative;
         padding: 4px;
     }
 
-    .selectable:hover {
-        border-width: 2px !important;
+    .selectable:hover:not(.selected) {
+        border-color: #cccccc !important;
     }
 
     .selected {
         border-color: #eeeeee !important;
-        border-width: 2px !important;
     }
 </style>

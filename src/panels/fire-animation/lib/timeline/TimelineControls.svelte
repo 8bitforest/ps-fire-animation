@@ -6,10 +6,11 @@
     import IconDuplicate from '../../../../lib/components/icons/IconDuplicate.svelte'
     import IconDelete from '../../../../lib/components/icons/IconDelete.svelte'
     import IconCollapseAll from '../../../../lib/components/icons/IconCollapseAll.svelte'
-    import { getTimelineContext, Row } from './Timeline'
+    import { findFrame, getTimelineContext, Row } from './Timeline'
     import IconAdd from '../../../../lib/components/icons/IconAdd.svelte'
+    import { get } from 'svelte/store'
 
-    let { rows } = getTimelineContext()
+    let { rows, selectFrame, nextFrame, previousFrame } = getTimelineContext()
 
     function onCollapseAll() {
         function collapseAll(row: Row) {
@@ -21,15 +22,17 @@
     }
 
     function onToBeginning() {
-        console.log('to beginning')
+        const selectedFrame = findFrame($rows, frame => get(frame.selected))
+        const frame = selectedFrame?.row.frames![0]
+        if (frame) selectFrame(frame)
     }
 
     function onPreviousFrame() {
-        console.log('previous frame')
+        previousFrame()
     }
 
     function onNextFrame() {
-        console.log('next frame')
+        nextFrame()
     }
 
     function onDuplicateFrame() {

@@ -4,6 +4,7 @@
     import Timeline from './timeline/Timeline.svelte'
     import { Timeline as PSTimeline } from '../../../api/photoshop/timeline'
     import {
+        findFrame,
         findFrameByLayerId,
         findFrames,
         findRows,
@@ -26,18 +27,20 @@
     const frameWidthMax = 300
     const defaultFrameWidth = 100
     let scrollWidth = 0
+    let frameColWidth = 0
+    let scrollbar: HTMLElement
 
     let rows = writable(layersToRows(document.getLayers()))
     let config: TimelineConfig = {
         rows,
         frameWidth: writable(defaultFrameWidth),
         layerColWidth: writable(300),
-        addFrameColWidth: writable(50),
+        addFrameColWidth: writable(45),
         collapsedRowHeight: writable(20),
         expandedRowHeight: writable(
             calculateExpandedRowHeight(defaultFrameWidth)
         ),
-        scrollPercentage: writable(0),
+        scrollX: writable(0),
         headIndex: writable(
             currentTime
                 ? currentTime.frameRate * currentTime.seconds +
@@ -48,15 +51,23 @@
         thumbnailResolution: writable(300),
         selectFrame,
         setRowVisibility,
-        setScrollWidth: width => (scrollWidth = width)
+        setScrollWidth: width => (scrollWidth = width),
+        timelineResized(width) {
+            frameColWidth = width
+            ensureSelectedVisible()
+        },
+        createEmptyFrame,
+        createDuplicateFrame,
+        previousFrame,
+        nextFrame
     }
 
     let {
-        scrollPercentage,
         frameWidth,
         expandedRowHeight,
         thumbnailResolution,
-        headIndex
+        headIndex,
+        scrollX
     } = config
 
     $: {
@@ -71,9 +82,7 @@
 
         window.requestAnimationFrame(() => {
             const target = event.target as HTMLElement
-            const width = target.scrollWidth - target.clientWidth
-            let percent = target.scrollLeft / (width - 10)
-            $scrollPercentage = Math.min(1, Math.max(0, percent))
+            $scrollX = target.scrollLeft
             ticking = false
         })
     }
@@ -95,11 +104,41 @@
         for (const frame of oldFrames) frame.selected.set(false)
         frame.selected.set(true)
         $headIndex = frame.row.frames!.indexOf(frame)
+        ensureSelectedVisible()
     }
 
     function setRowVisibility(row: Row, visible: boolean) {
         row.layer.visible = visible
         row.visible.set(visible)
+    }
+
+    function ensureSelectedVisible() {
+        const selectedFrame = findFrame($rows, frame => get(frame.selected))
+        if (!selectedFrame) return
+
+        const minPadding = $frameWidth * 1.1
+        const frameIndex = selectedFrame.row.frames!.indexOf(selectedFrame)
+        const frameX = frameIndex * $frameWidth + $frameWidth / 2
+        const minX = frameX - frameColWidth / 2 + $frameWidth / 2 + minPadding
+        const maxX = frameX + frameColWidth / 2 - $frameWidth / 2 - minPadding
+        const currentX = $scrollX + frameColWidth / 2
+        const newX = Math.min(maxX, Math.max(minX, currentX))
+        if (newX !== currentX) scrollbar.scrollLeft = newX - frameColWidth / 2
+    }
+
+    async function createEmptyFrame(row: Row, afterIndex: number) {
+        await row.frames![afterIndex].layer.select()
+        await document.createFrame()
+        headIndex.set(afterIndex + 1)
+        refreshRows()
+        refreshSelectedFrames()
+    }
+
+    async function createDuplicateFrame(frame: Frame) {
+        await document.duplicateLayer(frame.layer)
+        headIndex.set(frame.row.frames!.indexOf(frame) + 1)
+        refreshRows()
+        refreshSelectedFrames()
     }
 
     export async function refreshCurrentFrame() {
@@ -139,6 +178,22 @@
     export function timelineTimeChanged(frame: number) {
         $headIndex = frame
     }
+
+    export function nextFrame() {
+        const selectedFrame = findFrame($rows, frame => get(frame.selected))
+        if (!selectedFrame) return
+        const index = selectedFrame.row.frames!.indexOf(selectedFrame)
+        if (index < selectedFrame.row.frames!.length - 1)
+            selectFrame(selectedFrame.row.frames![index + 1])
+    }
+
+    export function previousFrame() {
+        const selectedFrame = findFrame($rows, frame => get(frame.selected))
+        if (!selectedFrame) return
+        const index = selectedFrame.row.frames!.indexOf(selectedFrame)
+        if (index && index > 0)
+            selectFrame(selectedFrame.row.frames![index - 1])
+    }
 </script>
 
 <div class="timeline-container" style="display: {visible ? 'flex' : 'none'}">
@@ -155,7 +210,7 @@
             on:input={onZoom} />
         <IconImage class="zoom-icon-large" />
         <div class="scroll-bar-container">
-            <div class="scroll-bar" on:scroll={onScroll}>
+            <div class="scroll-bar" on:scroll={onScroll} bind:this={scrollbar}>
                 <div class="scroll-bar-inner" style="min-width: {scrollWidth}">
                 </div>
             </div>

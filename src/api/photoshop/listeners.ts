@@ -47,7 +47,7 @@ interface CloseDescriptor {
     documentID: number
 }
 
-interface newDocumentDescriptor {
+interface NewDocumentDescriptor {
     _obj: 'newDocument'
     documentID: number
 }
@@ -102,7 +102,7 @@ export class FireListeners {
     static async addNewDocumentListener(
         callback: (documentId: number) => void
     ): Promise<void> {
-        await addListener<newDocumentDescriptor>('newDocument', descriptor => {
+        await addListener<NewDocumentDescriptor>('newDocument', descriptor => {
             callback(descriptor.documentID)
         })
     }
@@ -140,10 +140,18 @@ export class FireListeners {
         callback: (layerName: string, visible: boolean) => void
     ): Promise<void> {
         await addListener<HideDescriptor>('hide', descriptor => {
-            callback(descriptor.null[0]._name, false)
+            callback(
+                descriptor.null[0]._name ??
+                    ps.app.activeDocument.activeLayers[0].name,
+                false
+            )
         })
         await addListener<ShowDescriptor>('show', descriptor => {
-            callback(descriptor.null[0]._name, true)
+            callback(
+                descriptor.null[0]._name ??
+                    ps.app.activeDocument.activeLayers[0].name,
+                true
+            )
         })
     }
 }

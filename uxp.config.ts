@@ -23,7 +23,7 @@ const manifest: UXP_Manifest = {
             type: 'panel',
             id: 'com.eightbitforest.fireanimation.panel',
             label: {
-                default: 'Fire Animation'
+                default: 'Fire Animation 🔥'
             },
             minimumSize: { width: 230, height: 200 },
             maximumSize: { width: 2000, height: 2000 },
@@ -45,6 +45,20 @@ const manifest: UXP_Manifest = {
                     theme: ['lightest', 'light']
                 }
             ]
+        },
+        {
+            type: 'command',
+            id: 'previousFrame',
+            label: {
+                default: 'Previous Frame'
+            }
+        },
+        {
+            type: 'command',
+            id: 'nextFrame',
+            label: {
+                default: 'Next Frame'
+            }
         }
     ],
     requiredPermissions: {
@@ -55,7 +69,6 @@ const manifest: UXP_Manifest = {
         },
         network: {
             domains: [
-                'https://picsum.photos',
                 `ws://localhost:${extraPrefs.hotReloadPort}` // Required for hot reload
             ]
         },

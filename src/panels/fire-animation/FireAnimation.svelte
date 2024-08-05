@@ -6,6 +6,7 @@
     import { onMount } from 'svelte'
     import { Timeline } from '../../api/photoshop/timeline'
     import Text from '../../lib/components/Text.svelte'
+    import { entrypoints } from 'uxp'
 
     let container: HTMLElement
     const documentTimelines = new Map<number, DocumentTimeline>()
@@ -69,6 +70,7 @@
 
     let refreshing = false
     let needsRefresh = false
+
     async function fullRefresh() {
         if (refreshing) {
             needsRefresh = true
@@ -115,6 +117,19 @@
     FireListeners.addLayerVisibilityChangeListener(async layerName => {
         currentDocumentTimeline?.layerVisibilityChanged(layerName)
     })
+
+    const commands = {
+        previousFrame: async () => {
+            currentDocumentTimeline?.previousFrame()
+        },
+        nextFrame: async () => {
+            currentDocumentTimeline?.nextFrame()
+        }
+    }
+
+    // @ts-ignore
+    entrypoints.setup({ commands })
+    Object.assign(window, commands)
 </script>
 
 <div class="fire-animation" bind:this={container}>

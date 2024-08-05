@@ -2,20 +2,15 @@
     import IconPlayhead from '../../../../lib/components/icons/IconPlayhead.svelte'
     import { getTimelineContext } from './Timeline'
 
-    export let timelineWidth: number
+    export let frameColWidth: number
 
-    let {
-        frameWidth,
-        scrollOffset,
-        layerColWidth,
-        addFrameColWidth,
-        headIndex
-    } = getTimelineContext()
+    let { frameWidth, scrollOffset, layerColWidth, headIndex } =
+        getTimelineContext()
 
     let offset = 0
     $: {
         let minX = $layerColWidth
-        let maxX = timelineWidth - $addFrameColWidth - 16
+        let maxX = $layerColWidth + frameColWidth
 
         const unboundedOffset =
             -$scrollOffset + $layerColWidth + $headIndex * $frameWidth
