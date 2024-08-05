@@ -7,7 +7,6 @@
         findFrame,
         findFrameByLayerId,
         findFrames,
-        findRows,
         Frame,
         layersToRows,
         Row,
@@ -108,8 +107,9 @@
     }
 
     function setRowVisibility(row: Row, visible: boolean) {
-        row.layer.visible = visible
-        row.visible.set(visible)
+        row.layer.setVisible(visible)
+        row.visible = visible
+        rows.set($rows)
     }
 
     function ensureSelectedVisible() {
@@ -142,7 +142,7 @@
     }
 
     export async function refreshCurrentFrame() {
-        const frame = findFrameByLayerId($rows, document.currentLayer.id)
+        const frame = findFrameByLayerId($rows, document.currentLayerId)
         if (frame?.row && get(frame.row.expanded)) {
             frame.image.set(
                 await frame.layer.getBase64ImageData(
@@ -155,12 +155,12 @@
 
     export function refreshRows() {
         updateRowsFromLayers($rows, document.getLayers())
+        // For now, just update all rows. In the future we could use stores to update only what changed if needed.
         rows.set($rows)
     }
 
     export function refreshSelectedFrames() {
-        const selectedLayers = document.getSelectedLayers()
-        const selectedLayerIds = selectedLayers.map(layer => layer.id)
+        const selectedLayerIds = document.getSelectedLayerIds()
         const oldFrames = findFrames($rows, frame => get(frame.selected))
         for (const frame of oldFrames) frame.selected.set(false)
 
@@ -168,11 +168,6 @@
             selectedLayerIds.includes(frame.layer.id)
         )
         for (const frame of newFrames) frame.selected.set(true)
-    }
-
-    export function layerVisibilityChanged(layerName: string) {
-        const updatedRows = findRows($rows, row => row.name === layerName)
-        for (const row of updatedRows) row.visible.set(row.layer.visible)
     }
 
     export function timelineTimeChanged(frame: number) {

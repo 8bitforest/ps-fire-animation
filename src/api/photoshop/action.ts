@@ -35,4 +35,19 @@ export class ActionTarget {
             ) as any
         )[0][property] as T
     }
+
+    async setPropertyAsync(property: string, value: any) {
+        await ps.action.batchPlay(
+            [
+                {
+                    _obj: 'set',
+                    _target: this._target,
+                    to: {
+                        [property]: value
+                    }
+                }
+            ],
+            {}
+        )
+    }
 }

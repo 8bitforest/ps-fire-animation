@@ -13,7 +13,7 @@ export interface RowBase {
     color: string
     layer: FireLayer
     expanded: Writable<boolean>
-    visible: Writable<boolean>
+    visible: boolean
 }
 
 export interface FolderRow extends RowBase {
@@ -106,13 +106,10 @@ function makeRow(layer: FireLayer): Row {
         const row: Row = {
             id: layer.id,
             name: layer.name,
-            color:
-                layer.color === layerColors.none
-                    ? layerColors.violet.hex
-                    : layer.color.hex,
+            color: layer.color.hex,
             layer,
             expanded: writable(false),
-            visible: writable(layer.visible),
+            visible: layer.visible,
             frames: []
         }
 
@@ -122,23 +119,20 @@ function makeRow(layer: FireLayer): Row {
         return {
             id: layer.id,
             name: layer.name,
-            color: layer.color === layerColors.none ? '' : layer.color.hex,
+            color: layer.color.hex,
             layer,
             expanded: writable(layer.expanded),
-            visible: writable(layer.visible),
+            visible: layer.visible,
             children: layer.children.map(makeRow)
         }
     } else {
         const row: FrameRow = {
             id: layer.id,
             name: layer.name,
-            color:
-                layer.color === layerColors.none
-                    ? layerColors.violet.hex
-                    : layer.color.hex,
+            color: layer.color.hex,
             layer,
             expanded: writable(false),
-            visible: writable(layer.visible),
+            visible: layer.visible,
             frames: []
         }
 
@@ -170,26 +164,30 @@ export function updateRowsFromLayers(rows: Row[], layers: FireLayer[]) {
         for (const layer of layers) {
             let row = rows.find(row => row.id === layer.id)
             if (row) {
+                // Update row
+                row.name = layer.name
+                row.visible = layer.visible
+                row.color =
+                    layer.color === layerColors.none ? '' : layer.color.hex
+
+                // Update children
                 const type = row.layer.type
-                if (type === FireLayerType.Group && row.children)
+                if (type === FireLayerType.Group && row.children) {
                     updateRows(row.children, layer.children)
-                else if (type === FireLayerType.Group && !row.children)
+                } else if (type === FireLayerType.Group && !row.children) {
                     row = {
                         ...row,
                         children: layer.children.map(makeRow),
                         frames: undefined
                     }
-                else if (type === FireLayerType.Video && row.frames)
+                } else if (type === FireLayerType.Video && row.frames) {
                     updateFrames(row, row.frames, layer.children)
-                else if (type === FireLayerType.Video && !row.frames) {
+                } else if (type === FireLayerType.Video && !row.frames) {
                     row = { ...row, frames: [], children: undefined }
                     row.frames = layer.children.map(frame =>
                         makeFrame(row!, frame)
                     )
                 }
-
-                row.color =
-                    layer.color === layerColors.none ? '' : layer.color.hex
             } else {
                 row = makeRow(layer)
             }

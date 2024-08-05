@@ -114,10 +114,6 @@
         currentDocumentTimeline?.timelineTimeChanged(time)
     })
 
-    FireListeners.addLayerVisibilityChangeListener(async layerName => {
-        currentDocumentTimeline?.layerVisibilityChanged(layerName)
-    })
-
     const commands = {
         previousFrame: async () => {
             currentDocumentTimeline?.previousFrame()

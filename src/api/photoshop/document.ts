@@ -1,9 +1,18 @@
 import ps from 'photoshop'
 import { Document } from 'photoshop/dom/Document'
-import { FireLayer } from './layer'
+import { FireLayer, PSLayer, psLayerProperties } from './layer'
+import { ActionDescriptor } from 'photoshop/dom/CoreModules'
 
 export class FireDocument {
-    constructor(public readonly psDocument: Document) {}
+    public readonly id: number
+    public readonly width: number
+    public readonly height: number
+
+    constructor(public readonly psDocument: Document) {
+        this.id = psDocument.id
+        this.width = psDocument.width
+        this.height = psDocument.height
+    }
 
     static fromId(id: number) {
         const psDocument = ps.app.documents.filter(doc => doc.id === id)?.[0]
@@ -15,27 +24,80 @@ export class FireDocument {
         return new FireDocument(ps.app.activeDocument)
     }
 
-    get id() {
-        return this.psDocument.id
+    get currentLayerId() {
+        return this.psDocument.activeLayers[0]?.id
     }
 
-    get currentLayer() {
-        return new FireLayer(ps.app.activeDocument.activeLayers[0])
+    getSelectedLayerIds() {
+        return this.psDocument.activeLayers.map(layer => layer.id)
     }
 
-    getSelectedLayers() {
-        return ps.app.activeDocument.activeLayers.map(
-            layer => new FireLayer(layer)
-        )
+    private getLayerWithoutChildren(
+        selectedLayerIds: number[],
+        id: number
+    ): FireLayer {
+        const res = ps.action.batchPlay(
+            [
+                {
+                    _obj: 'multiGet',
+                    _target: [
+                        {
+                            _ref: 'layer',
+                            _id: id
+                        }
+                    ],
+                    extendedReference: [psLayerProperties]
+                }
+            ],
+            {
+                synchronousExecution: true
+            }
+        ) as unknown as PSLayer[]
+
+        return new FireLayer(this, res[0], [], selectedLayerIds)
     }
 
     getLayers(): FireLayer[] {
-        return this.psDocument.layers.map(layer => new FireLayer(layer))
+        const selections = this.getSelectedLayerIds()
+        const res = ps.action.batchPlay(
+            [
+                {
+                    _obj: 'multiGet',
+                    _target: [
+                        {
+                            _ref: 'document',
+                            _id: FireDocument.current.id
+                        }
+                    ],
+                    extendedReference: [
+                        psLayerProperties,
+                        {
+                            _obj: 'layer',
+                            index: 1,
+                            count: -1
+                        }
+                    ],
+                    options: {
+                        failOnMissingProperty: false,
+                        failOnMissingElement: true
+                    }
+                }
+            ],
+            {
+                synchronousExecution: true
+            }
+        ) as unknown as ActionDescriptor[]
+
+        const allLayers = (res[0].list as PSLayer[]).reverse()
+        const rootLayers = allLayers.filter(layer => layer.parentLayerID === -1)
+        return rootLayers.map(
+            layer => new FireLayer(this, layer, allLayers, selections)
+        )
     }
 
     async createFrame(using: any = {}): Promise<FireLayer> {
         await this.psDocument.suspendHistory(async () => {
-            let result = await ps.action.batchPlay(
+            await ps.action.batchPlay(
                 [
                     {
                         _obj: 'make',
@@ -56,12 +118,13 @@ export class FireDocument {
             )
         }, 'Create Layer')
 
-        return new FireLayer(this.psDocument.activeLayers[0])
+        const selections = this.getSelectedLayerIds()
+        return this.getLayerWithoutChildren(selections, selections[0])
     }
 
     async duplicateLayer(layer: FireLayer): Promise<FireLayer> {
         await this.psDocument.suspendHistory(async () => {
-            let result = await ps.action.batchPlay(
+            await ps.action.batchPlay(
                 [
                     {
                         _obj: 'duplicate',
@@ -77,7 +140,8 @@ export class FireDocument {
             )
         }, 'Duplicate Layer')
 
-        return new FireLayer(this.psDocument.activeLayers[0])
+        const selections = this.getSelectedLayerIds()
+        return this.getLayerWithoutChildren(selections, selections[0])
     }
 
     get canvasSize() {
@@ -89,5 +153,16 @@ export class FireDocument {
 
     get aspectRatio() {
         return this.canvasSize.width / this.canvasSize.height
+    }
+
+    async suspendHistory<T = void>(
+        fn: () => Promise<T> | T,
+        name: string
+    ): Promise<T> {
+        let result: T
+        await this.psDocument.suspendHistory(async () => {
+            result = await fn()
+        }, name)
+        return result!
     }
 }

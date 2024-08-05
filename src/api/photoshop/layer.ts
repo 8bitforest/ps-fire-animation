@@ -1,6 +1,35 @@
 import ps from 'photoshop'
-import { Layer } from 'photoshop/dom/Layer'
 import { ActionTarget } from './action'
+import { FireDocument } from './document'
+
+export enum PSLayerKind {
+    Pixel = 1,
+    Group = 7,
+    GroupEnd = 13
+}
+
+export const psLayerProperties = [
+    'layerID',
+    'name',
+    'visible',
+    'color',
+    'layerKind',
+    'parentLayerID',
+    'layerSectionExpanded'
+]
+
+export interface PSLayer {
+    layerID: number
+    name: string
+    visible: boolean
+    color: {
+        _enum: 'string'
+        _value: string
+    }
+    layerKind: number
+    parentLayerID: number
+    layerSectionExpanded: boolean
+}
 
 export enum FireLayerType {
     Group = 'group',
@@ -26,7 +55,7 @@ export interface FireLayerTrimmedImageData {
 }
 
 export const layerColors = {
-    none: { value: 'none', name: 'None', hex: 'transparent' },
+    none: { value: 'none', name: 'None', hex: '' },
     red: { value: 'red', name: 'Red', hex: '#8d2d2c' },
     orange: { value: 'orange', name: 'Orange', hex: '#935201' },
     yellowColor: { value: 'yellowColor', name: 'Yellow', hex: '#957c00' },
@@ -41,26 +70,60 @@ export const layerColors = {
 }
 
 export class FireLayer {
+    public readonly id: number
+    public readonly name: string
+    public readonly selected: boolean
+    public readonly visible: boolean
+    public readonly type: FireLayerType
+    public readonly color: FireLayerColor
+    public readonly expanded: boolean
+    public readonly children: ReadonlyArray<FireLayer>
+
     private _target: ActionTarget
 
-    constructor(public readonly psLayer: Layer) {
-        this._target = ActionTarget.fromLayer(psLayer.id)
-    }
+    constructor(
+        public readonly document: FireDocument,
+        layer: PSLayer,
+        allLayers: PSLayer[],
+        selectedLayerIds: number[]
+    ) {
+        this.children = allLayers
+            .filter(
+                l =>
+                    l.parentLayerID === layer.layerID &&
+                    l.layerKind !== PSLayerKind.GroupEnd
+            )
+            .map(l => new FireLayer(document, l, allLayers, selectedLayerIds))
 
-    get id() {
-        return this.psLayer.id
-    }
+        this.id = layer.layerID
+        this.name = layer.name
+        this.selected = selectedLayerIds.includes(layer.layerID)
+        this.visible = layer.visible
+        this.expanded = layer.layerSectionExpanded
 
-    get name() {
-        return this.psLayer.name
-    }
+        // Photoshop doesn't tell you if a group is a video group...
+        if (layer.layerKind === PSLayerKind.Pixel) {
+            this.type = FireLayerType.Layer
+        } else if (layer.layerKind === PSLayerKind.Group) {
+            if (this.children.every(l => l.type === FireLayerType.Layer)) {
+                this.type = FireLayerType.Video
+            } else {
+                this.type = FireLayerType.Group
+            }
+        } else {
+            this.type = FireLayerType.Unknown
+        }
 
-    get selected() {
-        return this.psLayer.selected
+        this.color =
+            Object.values(layerColors).find(
+                c => c.value === layer.color._value
+            ) ?? layerColors.none
+
+        this._target = ActionTarget.fromLayer(this.id)
     }
 
     async select() {
-        await this.psLayer.document.suspendHistory(async () => {
+        await this.document.suspendHistory(async () => {
             await ps.action.batchPlay(
                 [
                     {
@@ -68,10 +131,10 @@ export class FireLayer {
                         _target: [
                             {
                                 _ref: 'layer',
-                                _id: this.psLayer.id
+                                _id: this.id
                             }
                         ],
-                        layerID: [this.psLayer.id]
+                        layerID: [this.id]
                     }
                 ],
                 {}
@@ -79,48 +142,23 @@ export class FireLayer {
         }, 'Select Layer')
     }
 
-    get visible() {
-        return this.psLayer.visible
-    }
-
-    set visible(value: boolean) {
-        this.psLayer.document.suspendHistory(() => {
-            this.psLayer.visible = value
+    async setVisible(value: boolean) {
+        await this.document.suspendHistory(async () => {
+            await ps.action.batchPlay(
+                [
+                    {
+                        _obj: value ? 'show' : 'hide',
+                        null: [
+                            {
+                                _ref: 'layer',
+                                _id: this.id
+                            }
+                        ]
+                    }
+                ],
+                {}
+            )
         }, 'Set Layer Visibility')
-    }
-
-    get type() {
-        // Photoshop doesn't tell you if a group is a video group...
-        // So just assume any group with *only* normal layers is a video group
-        if (this.psLayer.kind.toString() === 'pixel') {
-            return FireLayerType.Layer
-        } else if (this.psLayer.kind.toString() === 'group') {
-            if (
-                this.psLayer.layers?.every(l => l.kind.toString() === 'pixel')
-            ) {
-                return FireLayerType.Video
-            } else {
-                return FireLayerType.Group
-            }
-        } else {
-            return FireLayerType.Unknown
-        }
-    }
-
-    get color() {
-        const psColor = this._target.getProperty('color')?.['_value'] ?? 'none'
-        return (
-            Object.values(layerColors).find(c => c.value === psColor) ||
-            layerColors.none
-        )
-    }
-
-    get expanded() {
-        return !!this._target.getProperty('layerSectionExpanded')
-    }
-
-    get children(): ReadonlyArray<FireLayer> {
-        return this.psLayer.layers?.map(layer => new FireLayer(layer)) ?? []
     }
 
     async getBase64ImageData(
@@ -132,7 +170,7 @@ export class FireLayer {
                 let imageObj
                 try {
                     imageObj = await ps.imaging.getPixels({
-                        layerID: this.psLayer.id,
+                        layerID: this.id,
                         targetSize: { width, height },
                         componentSize: 8,
                         applyAlpha: true
@@ -166,11 +204,9 @@ export class FireLayer {
                         imageObj.sourceBounds.bottom -
                         imageObj.sourceBounds.top,
                     fullWidth:
-                        this.psLayer.document.width /
-                        Math.pow(2, imageObj.level),
+                        this.document.width / Math.pow(2, imageObj.level),
                     fullHeight:
-                        this.psLayer.document.height /
-                        Math.pow(2, imageObj.level)
+                        this.document.height / Math.pow(2, imageObj.level)
                 }
             },
             { commandName: 'getLayerImageData' }

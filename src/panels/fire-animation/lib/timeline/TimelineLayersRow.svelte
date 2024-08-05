@@ -9,7 +9,6 @@
     export let depth = 0
 
     let expanded = row.expanded
-    let visible = row.visible
 
     const indentWidth = 30
 
@@ -17,7 +16,7 @@
         getTimelineContext()
 
     function toggleVisibility() {
-        setRowVisibility(row, !$visible)
+        setRowVisibility(row, !row.visible)
     }
 </script>
 
@@ -50,7 +49,7 @@
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="icon-visibility-container" on:click={toggleVisibility}>
-                {#if $visible}
+                {#if row.visible}
                     <IconVisibility class="icon-visibility" />
                 {:else}
                     <IconVisibilityOff class="icon-visibility-off" />

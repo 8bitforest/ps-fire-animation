@@ -9,6 +9,7 @@
     import { lightenDarkenColor } from '../../../../lib/utils'
     import PSLayerThumbnail from '../PSLayerThumbnail.svelte'
     import { Frame, getTimelineContext } from './Timeline'
+    import { layerColors } from '../../../../api/photoshop/layer'
 
     export let frame: Frame
     export let width: number
@@ -16,10 +17,13 @@
 
     const { selectFrame } = getTimelineContext()
 
-    const defaultColor = '#3a3a3a'
+    const defaultGroupColor = '#3a3a3a'
+    const defaultFrameColor = layerColors.violet.hex
     let image = frame.image
-    let color = frame.row.color || defaultColor
-    let borderColor = lightenDarkenColor(color, 60)
+    $: color = !frame.row.children
+        ? frame.row.color || defaultFrameColor
+        : defaultGroupColor
+    $: borderColor = lightenDarkenColor(color, 60)
 
     let thumbnailHeight = 0
     let thumbnailWidth = 0
