@@ -47,4 +47,51 @@ export class Timeline {
             { commandName: 'Set current time' }
         )
     }
+
+    static async toggleOnionSkin() {
+        await ps.core.executeAsModal(
+            async () => {
+                const res = await ps.action.batchPlay(
+                    [
+                        {
+                            _obj: 'select',
+                            _target: [
+                                {
+                                    _ref: 'menuItemClass',
+                                    _enum: 'menuItemType',
+                                    _value: 'timelineEnableOnionSkins'
+                                }
+                            ]
+                        }
+                    ],
+                    {}
+                )
+                console.log(res)
+            },
+            { commandName: 'Toggle onion skin' }
+        )
+    }
+
+    static async openOnionSkinSettings() {
+        await ps.core.executeAsModal(
+            async () => {
+                await ps.action.batchPlay(
+                    [
+                        {
+                            _obj: 'select',
+                            _target: [
+                                {
+                                    _ref: 'menuItemClass',
+                                    _enum: 'menuItemType',
+                                    _value: 'timelineOnionSkinSettings'
+                                }
+                            ]
+                        }
+                    ],
+                    {}
+                )
+            },
+            { commandName: 'Open onion skin settings' }
+        )
+    }
 }

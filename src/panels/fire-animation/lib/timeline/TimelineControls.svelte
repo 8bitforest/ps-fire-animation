@@ -4,13 +4,22 @@
     import IconArrowLeft from '../../../../lib/components/icons/IconArrowLeft.svelte'
     import IconArrowRight from '../../../../lib/components/icons/IconArrowRight.svelte'
     import IconDuplicate from '../../../../lib/components/icons/IconDuplicate.svelte'
-    import IconDelete from '../../../../lib/components/icons/IconDelete.svelte'
     import IconCollapseAll from '../../../../lib/components/icons/IconCollapseAll.svelte'
     import { findFrame, getTimelineContext, Row } from './Timeline'
     import IconAdd from '../../../../lib/components/icons/IconAdd.svelte'
     import { get } from 'svelte/store'
+    import IconPreset from '../../../../lib/components/icons/IconPreset.svelte'
+    import IconPageGear from '../../../../lib/components/icons/IconPageGear.svelte'
+    import { Timeline } from '../../../../api/photoshop/timeline'
 
-    let { rows, selectFrame, nextFrame, previousFrame } = getTimelineContext()
+    let {
+        rows,
+        selectFrame,
+        nextFrame,
+        previousFrame,
+        createEmptyFrame,
+        createDuplicateFrame
+    } = getTimelineContext()
 
     function onCollapseAll() {
         function collapseAll(row: Row) {
@@ -35,16 +44,26 @@
         nextFrame()
     }
 
-    function onDuplicateFrame() {
-        console.log('duplicate frame')
-    }
-
-    function onDeleteFrame() {
-        console.log('delete frame')
-    }
-
     function onNewFrame() {
-        console.log('new frame')
+        const selectedFrame = findFrame($rows, frame => get(frame.selected))
+        const row = selectedFrame?.row
+        if (row) {
+            const index = row.frames!.indexOf(selectedFrame)
+            createEmptyFrame(row, index)
+        }
+    }
+
+    function onDuplicateFrame() {
+        const selectedFrame = findFrame($rows, frame => get(frame.selected))
+        if (selectedFrame) createDuplicateFrame(selectedFrame)
+    }
+
+    function onToggleOnionSkin() {
+        Timeline.toggleOnionSkin()
+    }
+
+    function onOnionSkinSettings() {
+        Timeline.openOnionSkinSettings()
     }
 </script>
 
@@ -67,8 +86,11 @@
     <IconButton tooltip="Duplicate frame" click={onDuplicateFrame}>
         <IconDuplicate />
     </IconButton>
-    <IconButton tooltip="Delete frame" click={onDeleteFrame}>
-        <IconDelete />
+    <IconButton tooltip="Toggle onion skin" click={onToggleOnionSkin}>
+        <IconPreset />
+    </IconButton>
+    <IconButton tooltip="Onion skin settings" click={onOnionSkinSettings}>
+        <IconPageGear />
     </IconButton>
 </div>
 
